@@ -16,9 +16,36 @@ function togglePassword(){
     }
 }
 
-function handleLogin(event){
+function handleLogin(event) {
     event.preventDefault();
-
+    
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    const rememberMe = document.getElementById('rememberMe').checked;
+    
+    // Prepare data to send to PHP backend
+    const formData = new FormData();
+    formData.append('email', email);
+    formData.append('password', password);
+    formData.append('rememberMe', rememberMe);
+    
+    // Send to PHP backend
+    fetch('../php/login.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Login successful!');
+            // Redirect to dashboard or home page
+            // TODO: Move to the homepage along with the data
+        } else {
+            alert(data.message || 'Login failed');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred');
+    });
 }

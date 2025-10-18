@@ -83,6 +83,23 @@ body {
     color: #bbb;
 }
 
+select.form-control {
+    appearance: none;
+    background-color: #f9f9f9;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+select.form-control:focus {
+    border-color: #0ea5e9;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+
 .password-input-wrapper {
     position: relative;
     display: flex;
