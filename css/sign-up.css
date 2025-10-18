@@ -1,0 +1,249 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #f5f5f5;
+}
+
+.mobile-container {
+    max-width: 375px;
+    height: 100vh;
+    margin: 0 auto;
+    background-color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.page {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.page.active {
+    opacity: 1;
+    z-index: 1;
+}
+
+/* Sign Up Content */
+.signup-content,
+.verification-content {
+    width: 100%;
+    max-width: 330px;
+}
+
+.logo-signup {
+    width: 120px;
+    height: auto;
+    display: block;
+    margin: 0 auto 25px;
+}
+
+.signup-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 25px;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.form-control {
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 14px;
+    background-color: #f9f9f9;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    border-color: #0ea5e9;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+.form-control::placeholder {
+    color: #bbb;
+}
+
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper .form-control {
+    padding-right: 40px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    cursor: pointer;
+    color: #999;
+    font-size: 18px;
+    user-select: none;
+}
+
+.toggle-password:hover {
+    color: #0ea5e9;
+}
+
+.strength-bar {
+    height: 4px;
+    border-radius: 2px;
+    background-color: #e0e0e0;
+    overflow: hidden;
+}
+
+.strength-bar-fill {
+    height: 100%;
+    width: 0;
+    border-radius: 2px;
+    transition: width 0.3s, background-color 0.3s;
+}
+
+.strength-weak {
+    width: 33%;
+    background-color: #ef4444;
+}
+
+.strength-medium {
+    width: 66%;
+    background-color: #f59e0b;
+}
+
+.strength-strong {
+    width: 100%;
+    background-color: #10b981;
+}
+
+.register-btn,
+.verify-btn {
+    background-color: #0ea5e9;
+    border: none;
+    border-radius: 6px;
+    padding: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    transition: background-color 0.2s;
+}
+
+.register-btn:hover,
+.verify-btn:hover {
+    background-color: #0284c7;
+}
+
+.register-btn:disabled,
+.verify-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.login-section {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.login-section p {
+    font-size: 14px;
+    color: #666;
+    margin: 0;
+}
+
+.login-link {
+    color: #0ea5e9;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-link:hover {
+    text-decoration: underline;
+}
+
+/* Verification Page */
+.verification-form {
+    width: 100%;
+}
+
+.timer-section {
+    text-align: center;
+}
+
+.timer-section small {
+    font-size: 13px;
+    color: #999;
+}
+
+.resend-link {
+    color: #0ea5e9;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.resend-link:hover {
+    text-decoration: underline;
+}
+
+.resend-link.d-none {
+    display: none !important;
+}
+
+.d-block {
+    display: block;
+}
+
+.mt-2 {
+    margin-top: 8px;
+}
+
+.mt-3 {
+    margin-top: 16px;
+}
+
+.mt-4 {
+    margin-top: 24px;
+}
+
+.mb-3 {
+    margin-bottom: 20px;
+}
+
+.mb-4 {
+    margin-bottom: 24px;
+}
+
+.text-danger {
+    color: #ef4444;
+}
+
+.text-muted {
+    color: #999;
+}
+
+@media (max-width: 375px) {
+    .mobile-container {
+        max-width: 100%;
+    }
+}
