@@ -115,9 +115,11 @@ function registerUser($conn){
 
 
     echo json_encode([
-        'success' => true,
-        'message' => 'User registered successfully. Verification code sent.',
-        'code' => $verificationCode // (for testing)
+        'success' => $emailSent,
+        'message' => $emailSent
+            ? 'User registered successfully. Verification code sent.'
+            : 'User registered, but failed to send email.',
+        'code' => $verificationCode // for testing only, remove later
     ]);
 }
 
