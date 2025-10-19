@@ -1,4 +1,11 @@
 <?php
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require __DIR__ . '/../phpmailer/src/Exception.php';
+require __DIR__ . '/../phpmailer/src/PHPMailer.php';
+require __DIR__ . '/../phpmailer/src/SMTP.php';
+
 header('Content-Type: application/json');
 session_start();
 
@@ -35,6 +42,38 @@ $conn->close();
 
 // pabasa nalang sa signup.js yung script tapos yung forms na isesend sa php, the same as the login.
 
+function sendVerificationEmail($toEmail, $subject, $body)
+{
+    $mail = new PHPMailer(true);
+
+    try {
+        // Server settings
+        $mail->isSMTP();
+        $mail->Host       = 'smtp.gmail.com';  // or your SMTP host
+        $mail->SMTPAuth   = true;
+        $mail->Username   = 'your_email@gmail.com'; // replace with your sender email
+        $mail->Password   = 'your_app_password';    // use App Password if Gmail
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = 587;
+
+        // Recipients
+        $mail->setFrom('your_email@gmail.com', 'Your App Name');
+        $mail->addAddress($toEmail);
+
+        // Content
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body    = nl2br($body);
+        $mail->AltBody = strip_tags($body);
+
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
+
 function registerUser($conn){
     $name = $_POST['name'] ?? '';
     $email = $_POST['email'] ?? '';
@@ -69,8 +108,10 @@ function registerUser($conn){
     $stmt -> execute();
     $stmt -> close();
 
-    //TODO: Install PHPMailer to mail verification code
-    //Here: mail code to email using PHPMailer
+
+    $subject = "Your Verification Code";
+    $body = "Hello $name,<br><br>Your verification code is: <b>$verificationCode</b><br><br>Thank you for registering!";
+    $emailSent = sendVerificationEmail($email, $subject, $body);
 
 
     echo json_encode([
@@ -121,8 +162,18 @@ function resendCode($conn){
     $stmt -> execute();
     
     if($stmt -> affected_rows > 0){
-        //Here: Email the code
-        echo json_encode(['success' => true, 'message' => 'Verification code resent']);
+
+        $subject = "Your New Verification Code";
+        $body = "Your new verification code is: <b>$newCode</b>";
+        $emailSent = sendVerificationEmail($email, $subject, $body);
+
+
+        echo json_encode([
+            'success' => $emailSent,
+            'message' => $emailSent
+                ? 'Verification code resent.'
+                : 'Failed to send email.'
+        ]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to resend code']);
     }
