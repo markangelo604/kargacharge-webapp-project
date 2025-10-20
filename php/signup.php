@@ -51,13 +51,13 @@ function sendVerificationEmail($toEmail, $subject, $body)
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';  // or your SMTP host
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'your_email@gmail.com'; // replace with your sender email
-        $mail->Password   = 'your_app_password';    // use App Password if Gmail
+        $mail->Username   = 'm9034456@gmail.com'; // replace with your sender email
+        $mail->Password   = 'wguz from cytn gzkg';    // use App Password if Gmail
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
 
         // Recipients
-        $mail->setFrom('your_email@gmail.com', 'Your App Name');
+        $mail->setFrom('m9034456@gmail.com', 'KargaCharge');
         $mail->addAddress($toEmail);
 
         // Content
@@ -80,7 +80,7 @@ function registerUser($conn){
     $password = $_POST['password'] ?? '';
     $usertype = $_POST['userType'] ?? '';
 
-    if (!$name || !$email || !$password || !$userType) {
+    if (!$name || !$email || !$password || !$usertype) {
         echo json_encode(['success' => false, 'message' => 'All fields are required']);
         return;
     }
