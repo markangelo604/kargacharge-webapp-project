@@ -11,21 +11,19 @@ $password = $_POST['password'] ?? '';
 if (empty($email) || empty($password)) {
     echo json_encode([
         'success' => false,
-        'message' => 'Username and password are required.'
+        'message' => 'Email and password are required.'
     ]);
     exit;
 }
 
-$hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
-$stmt = $conn->prepare("SELECT id, password_hash FROM users WHERE username = ?");
+$stmt = $conn->prepare("SELECT id, password_hash, name, userType FROM users WHERE email = ?");
 $stmt->bind_param("s", $email);   
 $stmt->execute();
 $result = $stmt->get_result();
 
 if($result->num_rows > 0){
     $user = $result -> fetch_assoc();
-    if(password_verify($hashed_password, $user('password'))){
+    if(password_verify($password, $user['password_hash'])){
         echo json_encode([
             'success' => true,
             'message' => 'Login successful',

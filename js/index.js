@@ -42,7 +42,14 @@ function handleLogin(event) {
         if (data.success) {
             alert('Login successful!');
             // Redirect to dashboard or home page
-            // TODO: Move to the homepage along with the data
+            // TODO: Move to the homepage along with the data (depending on the role)
+            // response sent by the server.
+            // 'success' => true,
+            // 'message' => 'Login successful',
+            // 'user' => [
+            //     'name' => $user['name'],
+            //     'role' => $user['userType']
+            // ]
         } else {
             alert(data.message || 'Login failed');
         }
