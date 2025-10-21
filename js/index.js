@@ -1,7 +1,10 @@
-function showLoginPage(){
-    document.getElementById('frontPage').classList.remove('active');
-    document.getElementById('loginPage').classList.add('active');
-}
+window.addEventListener("load", () => {
+    // Wait 1 second, then switch to login page
+    setTimeout(() => {
+        document.getElementById('frontPage').classList.remove('active');
+        document.getElementById('loginPage').classList.add('active');
+    }, 1000);
+});
 
 function togglePassword(){
     const passwordInput = document.getElementById('password');
