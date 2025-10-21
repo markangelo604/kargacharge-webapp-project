@@ -24,7 +24,7 @@ function handleLogin(event) {
     
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    const rememberMe = document.getElementById('rememberMe').checked;
+    const rememberMe = document.getElementById('rememberMe').checked; //boolean
     
     // Prepare data to send to PHP backend
     const formData = new FormData();
