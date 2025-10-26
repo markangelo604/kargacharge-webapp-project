@@ -78,8 +78,14 @@ function registerUser($conn){
         return;
     }
 
-    $check = $conn->prepare("SELECT id from users WHERE email = ?");
-    $check -> bind_param("s", $email);
+    if($usertype === 'client'){
+        $table = "ev_owner";
+    } else {
+        $table = "charging_provider";
+    }
+
+    $check = $conn->prepare("SELECT id from ? WHERE email = ?");
+    $check -> bind_param("ss", $table, $email);
     $check -> execute();
     $check -> store_result();
 
