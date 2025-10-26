@@ -2,6 +2,7 @@ let signupName = '';
 let signupEmail = '';
 let signupPassword = '';
 let signupUserType = '';
+let signupPhoneNumber = '';
 let verificationTimer = null;
 let timerCount = 60;
 
@@ -12,6 +13,7 @@ function handleSignup(event) {
     
     const name = document.getElementById('name').value;
     const email = document.getElementById('email').value;
+    const phoneNumber = document.getElementById('phoneNumber').value;
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     const userType = document.getElementById('userType').value;
@@ -19,6 +21,11 @@ function handleSignup(event) {
     // Validate
     if (!validateEmail(email)) {
         showError('emailError', 'Invalid email format');
+        return;
+    }
+
+    if (!validatePhoneNumber(phoneNumber)) {
+        showError('phoneError', 'Invalid phone number format');
         return;
     }
     
@@ -43,11 +50,13 @@ function handleSignup(event) {
     signupPassword = password;
     signupName = name;
     signupUserType = userType
+    signupPhoneNumber = phoneNumber;
     
     // Send to backend
     const formData = new FormData();
     formData.append('name', name);
     formData.append('email', email);
+    formData.append('phoneno', phoneNumber);
     formData.append('password', password);
     formData.append('userType', userType);
     formData.append('action', 'register');
@@ -85,6 +94,7 @@ function handleVerification() {
     
     const formData = new FormData();
     formData.append('email', signupEmail);
+    formData.append('userType', userType);
     formData.append('code', code);
     formData.append('action', 'verify');
     
@@ -120,6 +130,7 @@ function resendCode(event) {
     
     const formData = new FormData();
     formData.append('email', signupEmail);
+    formData.append('userType', userType);
     formData.append('action', 'resend');
     
     fetch('../php/signup.php', {
@@ -199,6 +210,16 @@ function checkPasswordMatch() {
 function validateEmail(email) {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(email);
+}
+
+// Validate phone number (Philippine format)
+function validatePhoneNumber(phone) {
+    // Remove spaces and special characters
+    const cleaned = phone.replace(/[\s\-\(\)]/g, '');
+    
+    // Check for Philippine numbers: starts with +63 or 0, followed by 9 or 10 digits
+    const regex = /^(\+639|639|09)\d{9}$/;
+    return regex.test(cleaned);
 }
 
 // Show error message

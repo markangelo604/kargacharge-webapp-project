@@ -29,11 +29,17 @@
                     </div>
 
                     <div class="mb-3">
+                        <label for="phoneNumber" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phoneNumber" placeholder="+63 912 345 6789" required>
+                        <small class="text-danger" id="phoneError"></small>
+                    </div>
+
+                    <div class="mb-3">
                         <label for="userType" class="form-label">Sign up as</label>
                         <select id="userType" class="form-control" required>
                             <option value="">Select Role</option>
                             <option value="client">EV Owner</option>
-                            <option value="admin">Charger Provider</option>
+                            <option value="provider">Charger Provider</option>
                         </select>
                     </div>
 
