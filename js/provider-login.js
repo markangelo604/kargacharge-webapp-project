@@ -40,7 +40,7 @@ function handleProviderLogin(event) {
             // Available data from server:
             // data.user.name
             // data.user.role (should be 'provider' or 'charger_provider')
-            window.location.href = 'provider-dashboard.html';
+            window.location.href = '../charger-provider/provider-dashboard.html';
         } else {
             alert(data.message || 'Login failed');
         }

@@ -8,8 +8,8 @@ window.addEventListener("load", () => {
 
 function navigateToLogin(type) {
     if (type === 'client') {
-        window.location.href = '../client-login.html';
+        window.location.href = '../ev-owner/client-login.html';
     } else if (type === 'provider') {
-        window.location.href = '../provider-login.html';
+        window.location.href = '../charger-provider/provider-login.html';
     }
 }
