@@ -94,6 +94,7 @@ function handleVerification() {
     
     const formData = new FormData();
     formData.append('email', signupEmail);
+    formData.append('userType', userType);
     formData.append('code', code);
     formData.append('action', 'verify');
     
@@ -129,6 +130,7 @@ function resendCode(event) {
     
     const formData = new FormData();
     formData.append('email', signupEmail);
+    formData.append('userType', userType);
     formData.append('action', 'resend');
     
     fetch('../php/signup.php', {
@@ -208,6 +210,16 @@ function checkPasswordMatch() {
 function validateEmail(email) {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(email);
+}
+
+// Validate phone number (Philippine format)
+function validatePhoneNumber(phone) {
+    // Remove spaces and special characters
+    const cleaned = phone.replace(/[\s\-\(\)]/g, '');
+    
+    // Check for Philippine numbers: starts with +63 or 0, followed by 9 or 10 digits
+    const regex = /^(\+639|639|09)\d{9}$/;
+    return regex.test(cleaned);
 }
 
 // Show error message
