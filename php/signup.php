@@ -23,7 +23,7 @@ switch($action){
         verifyUser($conn);
         break;
 
-    case 'resend';
+    case 'resend':
         resendCode($conn);
         break;
 
@@ -84,8 +84,8 @@ function registerUser($conn){
         $table = "charging_provider";
     }
 
-    $check = $conn->prepare("SELECT id from ? WHERE email = ?");
-    $check -> bind_param("ss", $table, $email);
+    $check = $conn->prepare("SELECT id from $table WHERE email = ?");
+    $check -> bind_param("s", $email);
     $check -> execute();
     $check -> store_result();
 
@@ -102,17 +102,18 @@ function registerUser($conn){
 
     $user_id = rand(1000000, 9999999);
 
+    $is_verified = 0;
+
     if($usertype === 'client'){
-        $stmt = $conn -> prepare("INSERT INTO ev_owner(id, email, password_hash, phoneno, name, verification_code, is_verified)
-                                    VALUES(?, ?, ?, ?, ?, ?)");
-        $stmt -> bind_param("isssi",$user_id, $email, $password_hash, $phoneno, $name, $verificationCode, 0);
+        $stmt = $conn -> prepare("INSERT INTO ev_owner(`id`, `email`, `password_hash`, `phoneno`, `name`, `verification_code`, `is_verified`)
+                                    VALUES(?, ?, ?, ?, ?, ?, ?)");
+        $stmt -> bind_param("issssii",$user_id, $email, $password_hash, $phoneno, $name, $verificationCode, $is_verified);
         $stmt -> execute();
         $stmt -> close();
     } else {
-         $stmt = $conn -> prepare("INSERT INTO charging_provider(id, email, password_hash, phoneno, name, verification_code, is_verified)
-                                    VALUES(?, ?, ?, ?, ?, ?)");
-        $stmt -> bind_param("isssi",$user_id, $email, $password_hash, $phoneno, $name, $verificationCode, 0);
-        $stmt -> bind_param("",);
+         $stmt = $conn -> prepare("INSERT INTO charging_provider(`id`, `email`, `password_hash`, `phoneno`, `name`, `verification_code`, `is_verified`)
+                                    VALUES(?, ?, ?, ?, ?, ?, ?)");
+        $stmt -> bind_param("issssii",$user_id, $email, $password_hash, $phoneno, $name, $verificationCode, $is_verified);
         $stmt -> execute();
         $stmt -> close();
     }
@@ -148,15 +149,17 @@ function verifyUser($conn){
         $table = "charging_provider";
     }
 
-    $stmt = $conn -> prepare("SELECT id FROM ? where email = ? && verification_code = ?");
-    $stmt -> bind_param("ssi",$table ,$email, $code);
+    $stmt = $conn -> prepare("SELECT id FROM $table where email = ? && verification_code = ?");
+    $stmt -> bind_param("si",$email, $code);
     $stmt -> execute();
     $result = $stmt -> get_result();
-    $stmt -> close;
+    $stmt -> close();
+
+    $is_verified = 1;
 
     if($result -> num_rows > 0){
-        $update = $conn -> prepare("UPDATE ? SET is_verified = 1 WHERE email = ?");
-        $update -> bind_param("ss", $table, $email);
+        $update = $conn -> prepare("UPDATE $table SET is_verified = $is_verified WHERE email = ?");
+        $update -> bind_param("s", $email);
         $update -> execute();
         $update -> close();
 
@@ -182,8 +185,8 @@ function resendCode($conn){
     }
     
     $newCode = rand(100000, 999999);
-    $stmt = $conn -> prepare("UPDATE ? SET verification_code = ? WHERE email = ?");
-    $stmt -> bind_para("sis", $table, $newCode, $email);
+    $stmt = $conn -> prepare("UPDATE $table SET verification_code = ? WHERE email = ?");
+    $stmt -> bind_param("is", $newCode, $email);
     $stmt -> execute();
     
     if($stmt -> affected_rows > 0){
