@@ -2,6 +2,7 @@ let signupName = '';
 let signupEmail = '';
 let signupPassword = '';
 let signupUserType = '';
+let signupPhoneNumber = '';
 let verificationTimer = null;
 let timerCount = 60;
 
@@ -12,6 +13,7 @@ function handleSignup(event) {
     
     const name = document.getElementById('name').value;
     const email = document.getElementById('email').value;
+    const phoneNumber = document.getElementById('phoneNumber').value;
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     const userType = document.getElementById('userType').value;
@@ -19,6 +21,11 @@ function handleSignup(event) {
     // Validate
     if (!validateEmail(email)) {
         showError('emailError', 'Invalid email format');
+        return;
+    }
+
+    if (!validatePhoneNumber(phoneNumber)) {
+        showError('phoneError', 'Invalid phone number format');
         return;
     }
     
@@ -43,11 +50,13 @@ function handleSignup(event) {
     signupPassword = password;
     signupName = name;
     signupUserType = userType
+    signupPhoneNumber = phoneNumber;
     
     // Send to backend
     const formData = new FormData();
     formData.append('name', name);
     formData.append('email', email);
+    formData.append('phoneno', phoneNumber);
     formData.append('password', password);
     formData.append('userType', userType);
     formData.append('action', 'register');
