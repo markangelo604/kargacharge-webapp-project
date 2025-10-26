@@ -99,13 +99,13 @@ function registerUser($conn){
     if($usertype === 'client'){
         $stmt = $conn -> prepare("INSERT INTO ev_owner(id, email, password_hash, phoneno, name, verification_code, is_verified)
                                     VALUES(?, ?, ?, ?, ?, ?)");
-        $stmt -> bind_param("issss",$user_id, $email, $password_hash, $phoneno, $name, $verificationCode, 0);
+        $stmt -> bind_param("isssi",$user_id, $email, $password_hash, $phoneno, $name, $verificationCode, 0);
         $stmt -> execute();
         $stmt -> close();
     } else {
          $stmt = $conn -> prepare("INSERT INTO charging_provider(id, email, password_hash, phoneno, name, verification_code, is_verified)
                                     VALUES(?, ?, ?, ?, ?, ?)");
-        $stmt -> bind_param("issss",$user_id, $email, $password_hash, $phoneno, $name, $verificationCode, 0);
+        $stmt -> bind_param("isssi",$user_id, $email, $password_hash, $phoneno, $name, $verificationCode, 0);
         $stmt -> bind_param("",);
         $stmt -> execute();
         $stmt -> close();
