@@ -40,6 +40,8 @@ function handleClientLogin(event) {
             // Available data from server:
             // data.user.name
             // data.user.role (should be 'client' or 'ev_owner')
+            sessionStorage.setItem('user_name', data.user.name);
+            sessionStorage.setItem('user_id', data.user.user_id);
             window.location.href = '../ev-owner/client-dashboard.html';
         } else {
             alert(data.message || 'Login failed');

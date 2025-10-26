@@ -6,6 +6,20 @@ document.addEventListener('DOMContentLoaded', function(){
     const locationBtn = document.getElementById('locationBtn');
     const navItems = document.querySelectorAll('.nav-item');
 
+    // Check if user is logged in and get user data
+    const userName = sessionStorage.getItem('user_name');
+    const userId = sessionStorage.getItem('user_id');
+
+    if (!userName || !userId) {
+        // No user data found, redirect to login
+        alert('Please log in first');
+        window.location.href = '../ev-owner/client-login.html';
+        return;
+    }
+
+    // Set the page title with user name
+    document.title = `${userName} | KargaCharge`;
+
     // Search functionality
     if (searchInput){
         searchInput.addEventListener('input', function(e){
