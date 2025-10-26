@@ -71,6 +71,7 @@ function registerUser($conn){
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
     $usertype = $_POST['userType'] ?? '';
+    $phoneno = $_POST['phoneno'] ?? '';
 
     if (!$name || !$email || !$password || !$usertype) {
         echo json_encode(['success' => false, 'message' => 'All fields are required']);
@@ -93,12 +94,22 @@ function registerUser($conn){
 
     $verificationCode = rand(100000, 999999);
 
-    //TODO: Finalize ERD to insert new user
-    $stmt = $conn -> prepare("INSERT INTO users() 
-                                VALUES()");
-    $stmt -> bind_param("",);
-    $stmt -> execute();
-    $stmt -> close();
+    $user_id = rand(1000000, 9999999);
+
+    if($usertype === 'client'){
+        $stmt = $conn -> prepare("INSERT INTO ev_owner(id, email, password_hash, phoneno, name, verification_code, is_verified)
+                                    VALUES(?, ?, ?, ?, ?, ?)");
+        $stmt -> bind_param("issss",$user_id, $email, $password_hash, $phoneno, $name, $verificationCode, 0);
+        $stmt -> execute();
+        $stmt -> close();
+    } else {
+         $stmt = $conn -> prepare("INSERT INTO charging_provider(id, email, password_hash, phoneno, name, verification_code, is_verified)
+                                    VALUES(?, ?, ?, ?, ?, ?)");
+        $stmt -> bind_param("issss",$user_id, $email, $password_hash, $phoneno, $name, $verificationCode, 0);
+        $stmt -> bind_param("",);
+        $stmt -> execute();
+        $stmt -> close();
+    }
 
 
     $subject = "Your Verification Code";
@@ -118,21 +129,28 @@ function registerUser($conn){
 function verifyUser($conn){
     $email = $_POST['email'] ?? '';
     $code = $_POST['code'] ?? '';
+    $usertype = $_POST['userType'] ?? '';
 
     if (!$code) {
     echo json_encode(['success' => false, 'message' => 'Verification code is required']);
     return;
     }
 
-    $stmt = $conn -> prepare("SELECT id FROM users where id = ? && verification_code = ?");
-    $stmt -> bind_param("si",$email, $code);
+    if($usertype === 'client'){
+        $table = "ev_owner";
+    } else {
+        $table = "charging_provider";
+    }
+
+    $stmt = $conn -> prepare("SELECT id FROM ? where email = ? && verification_code = ?");
+    $stmt -> bind_param("ssi",$table ,$email, $code);
     $stmt -> execute();
     $result = $stmt -> get_result();
     $stmt -> close;
 
     if($result -> num_rows > 0){
-        $update = $conn -> prepare("UPDATE users SET is_verified = 1 WHERE email = ?");
-        $update -> bind_param("s", $email);
+        $update = $conn -> prepare("UPDATE ? SET is_verified = 1 WHERE email = ?");
+        $update -> bind_param("ss", $table, $email);
         $update -> execute();
         $update -> close();
 
@@ -144,15 +162,22 @@ function verifyUser($conn){
 
 function resendCode($conn){
     $email = $_POST['email'] ?? '';
+    $usertype = $_POST['userType'] ?? '';
 
     if (!$email) {
     echo json_encode(['success' => false, 'message' => 'Email missing for resend']);
     return;
     }
+
+    if($usertype === 'client'){
+        $table = "ev_owner";
+    } else {
+        $table = "charging_provider";
+    }
     
     $newCode = rand(100000, 999999);
-    $stmt = $conn -> prepare("UPDATE users SET verification_code = ? WHERE email = ?");
-    $stmt -> bind_para("is", $newCode, $email);
+    $stmt = $conn -> prepare("UPDATE ? SET verification_code = ? WHERE email = ?");
+    $stmt -> bind_para("sis", $table, $newCode, $email);
     $stmt -> execute();
     
     if($stmt -> affected_rows > 0){
