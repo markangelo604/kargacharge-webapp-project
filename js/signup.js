@@ -112,7 +112,11 @@ function handleVerification() {
         if (data.success) {
             alert('Email verified successfully!');
             // Redirect to login
-            window.location.href = 'index.html';
+            if (userType === 'client') {
+                window.location.href = '../ev-owner/client-login.html';
+            } else {
+                window.location.href = '../charger-provider/provider-login.html';
+            }
         } else {
             alert(data.message || 'Verification failed');
         }
