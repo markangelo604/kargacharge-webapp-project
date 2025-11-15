@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', function(){
     // Check if user is logged in and get user data
     const userName = sessionStorage.getItem('user_name');
     const userId = sessionStorage.getItem('user_id');
-    const userEmail = sessionStorage.getItem('user_email');
 
     if (!userName || !userId) {
         // No user data found, redirect to login

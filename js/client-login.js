@@ -42,6 +42,7 @@ function handleClientLogin(event) {
             // data.user.role (should be 'client' or 'ev_owner')
             sessionStorage.setItem('user_name', data.user.name);
             sessionStorage.setItem('user_id', data.user.user_id);
+            sessionStorage.setItem('user_email', data.user.user_email);
             window.location.href = '../ev-owner/client-dashboard.html';
         } else {
             alert(data.message || 'Login failed');
