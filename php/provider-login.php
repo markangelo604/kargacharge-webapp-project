@@ -33,7 +33,8 @@ if($result->num_rows > 0){
             'message' => 'Login successful',
             'user' => [
                 'name' => $user['name'],
-                'user_id' => $user['id']
+                'user_id' => $user['id'],
+                'user_email' => $email
             ]
         ]);
     } else {

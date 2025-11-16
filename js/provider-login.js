@@ -39,7 +39,11 @@ function handleProviderLogin(event) {
             // TODO: Redirect to provider homepage/dashboard
             // Available data from server:
             // data.user.name
+            // data.user.email
             // data.user.role (should be 'provider' or 'charger_provider')
+            sessionStorage.setItem('user_name', data.user.name);
+            sessionStorage.setItem('user_id', data.user.user_id);
+            sessionStorage.setItem('user_email', data.user.user_email);
             window.location.href = '../charger-provider/provider-dashboard.html';
         } else {
             alert(data.message || 'Login failed');
