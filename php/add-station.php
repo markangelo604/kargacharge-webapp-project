@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Validate required fields
-$required_fields = ['location', 'place_type', 'charge_type', 'rate', 'availability_status', 'prov_id'];
+$required_fields = ['location', 'place_type', 'charge_type', 'rate', 'availability_status', 'prov_id', 'stat_name'];
 $missing_fields = [];
 
 foreach ($required_fields as $field) {
@@ -37,6 +37,7 @@ $rate = floatval($_POST['rate']);
 $availability_status = trim($_POST['availability_status']);
 $details = isset($_POST['details']) ? trim($_POST['details']) : '';
 $prov_id = intval($_POST['prov_id']);
+$stat_name = trim($_POST['stat_name']);
 
 // Validate rate
 if ($rate <= 0) {
@@ -57,8 +58,8 @@ if (!preg_match('/^-?\d+\.?\d*,\s*-?\d+\.?\d*$/', $location)) {
 }
 
 // Prepare and execute insert query
-$sql = "INSERT INTO charging_station (location, place_type, charge_type, rate, availability_status, details, prov_id) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)";
+$sql = "INSERT INTO charging_station (location, place_type, charge_type, rate, availability_status, details, prov_id, stat_name) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
 $stmt = $conn->prepare($sql);
 
@@ -70,7 +71,7 @@ if (!$stmt) {
     exit;
 }
 
-$stmt->bind_param("sssdssi", $location, $place_type, $charge_type, $rate, $availability_status, $details, $prov_id);
+$stmt->bind_param("sssdssis", $location, $place_type, $charge_type, $rate, $availability_status, $details, $prov_id, $stat_name);
 
 if ($stmt->execute()) {
     $new_station_id = $stmt->insert_id;

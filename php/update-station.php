@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Validate required fields
-$required_fields = ['stat_id', 'location', 'place_type', 'charge_type', 'rate', 'availability_status', 'prov_id'];
+$required_fields = ['stat_id', 'stat_name', 'location', 'place_type', 'charge_type', 'rate', 'availability_status', 'prov_id'];
 $missing_fields = [];
 
 foreach ($required_fields as $field) {
@@ -31,6 +31,7 @@ if (!empty($missing_fields)) {
 
 // Sanitize and validate inputs
 $stat_id = intval($_POST['stat_id']);
+$stat_name = trim($_POST['stat_name']);
 $location = trim($_POST['location']);
 $place_type = trim($_POST['place_type']);
 $charge_type = trim($_POST['charge_type']);
@@ -87,7 +88,7 @@ $verify_stmt->close();
 
 // Prepare and execute update query
 $sql = "UPDATE charging_station 
-        SET location = ?, place_type = ?, charge_type = ?, rate = ?, availability_status = ?, details = ? 
+        SET stat_name = ?, location = ?, place_type = ?, charge_type = ?, rate = ?, availability_status = ?, details = ? 
         WHERE stat_id = ? AND prov_id = ?";
 
 $stmt = $conn->prepare($sql);
@@ -100,7 +101,7 @@ if (!$stmt) {
     exit;
 }
 
-$stmt->bind_param("sssdssii", $location, $place_type, $charge_type, $rate, $availability_status, $details, $stat_id, $prov_id);
+$stmt->bind_param("ssssdssii", $stat_name, $location, $place_type, $charge_type, $rate, $availability_status, $details, $stat_id, $prov_id);
 
 if ($stmt->execute()) {
     if ($stmt->affected_rows > 0) {

@@ -14,7 +14,7 @@ if (!isset($_GET['stat_id']) || empty($_GET['stat_id'])) {
 $stat_id = intval($_GET['stat_id']);
 
 // Prepare and execute query
-$sql = "SELECT stat_id, location, place_type, charge_type, rate, availability_status, details, prov_id 
+$sql = "SELECT stat_id, stat_name, location, place_type, charge_type, rate, availability_status, details, prov_id  
         FROM charging_station 
         WHERE stat_id = ?";
 
@@ -51,6 +51,7 @@ echo json_encode([
     'success' => true,
     'station' => [
         'stat_id' => $station['stat_id'],
+        'stat_name' => $station['stat_name'],
         'location' => $station['location'],
         'place_type' => $station['place_type'],
         'charge_type' => $station['charge_type'],

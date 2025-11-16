@@ -14,9 +14,9 @@ if (!isset($_GET['prov_id']) || empty($_GET['prov_id'])) {
 $prov_id = intval($_GET['prov_id']);
 
 // Prepare and execute query
-$sql = "SELECT stat_id, location, place_type, charge_type, rate, availability_status, details
-        FROM charging_station
-        WHERE prov_id = ?
+$sql = "SELECT stat_id, location, place_type, charge_type, rate, availability_status, details, stat_name 
+        FROM charging_station 
+        WHERE prov_id = ? 
         ORDER BY stat_id DESC";
 
 $stmt = $conn->prepare($sql);
@@ -24,12 +24,12 @@ $stmt = $conn->prepare($sql);
 if (!$stmt) {
     echo json_encode([
         'success' => false,
-        'message'=> 'Database error: ' . $conn->error
+        'message' => 'Database error: ' . $conn->error
     ]);
     exit;
 }
 
-$stmt->bind_param('i', $prov_id);
+$stmt->bind_param("i", $prov_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -42,7 +42,8 @@ while ($row = $result->fetch_assoc()) {
         'charge_type' => $row['charge_type'],
         'rate' => $row['rate'],
         'availability_status' => $row['availability_status'],
-        'details' => $row['details']
+        'details' => $row['details'],
+        'stat_name' => $row['stat_name'],
     ];
 }
 

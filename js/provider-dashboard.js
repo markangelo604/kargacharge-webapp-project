@@ -1,5 +1,8 @@
 // Stations functionality
 let currentStationId = null;
+let map = null;
+let marker = null;
+let selectedLatLng = null;
 
 document.addEventListener('DOMContentLoaded', function () {
     // Elements
@@ -101,6 +104,38 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Select Location Button
+    const selectLocationBtn = document.getElementById('selectLocationBtn');
+    if (selectLocationBtn) {
+        selectLocationBtn.addEventListener('click', function() {
+            openMapModal();
+        });
+    }
+
+    // Use Current Location Button
+    const useCurrentLocationBtn = document.getElementById('useCurrentLocation');
+    if (useCurrentLocationBtn) {
+        useCurrentLocationBtn.addEventListener('click', function() {
+            getCurrentLocation();
+        });
+    }
+
+    // Confirm Location Button
+    const confirmLocationBtn = document.getElementById('confirmLocation');
+    if (confirmLocationBtn) {
+        confirmLocationBtn.addEventListener('click', function() {
+            confirmLocationSelection();
+        });
+    }
+
+    // Initialize map when modal is shown
+    const mapModal = document.getElementById('mapModal');
+    if (mapModal) {
+        mapModal.addEventListener('shown.bs.modal', function() {
+            initializeMap();
+        });
+    }
+
     // Account tab functionality
     loadProviderAccountInfo();
 
@@ -132,8 +167,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-// Stations Functions
-function loadProviderStations(){
+function loadProviderStations() {
     const stationsList = document.getElementById('stationsList');
     const loadingState = document.getElementById('loadingState');
     const emptyState = document.getElementById('emptyState');
@@ -171,9 +205,9 @@ function loadProviderStations(){
         });
 }
 
-function displayStations(stations){
-    const stationList = document.getElementById('stationsList');
-
+function displayStations(stations) {
+    const stationsList = document.getElementById('stationsList');
+    
     stations.forEach(station => {
         const stationCard = createStationCard(station);
         stationsList.appendChild(stationCard);
@@ -186,12 +220,13 @@ function createStationCard(station) {
     card.innerHTML = `
         <div class="station-card-header">
             <div class="station-info">
-                <h3 class="station-location">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+                <h3 class="station-name">${station.stat_name || 'Unnamed Station'}</h3>
+                <p class="station-location">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
                         <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
                     </svg>
                     ${station.location}
-                </h3>
+                </p>
                 <p class="station-place-type">${station.place_type}</p>
             </div>
             <div class="station-actions">
@@ -273,15 +308,21 @@ function loadStationData(stationId) {
     fetch(`../php/get-station-details.php?stat_id=${stationId}`)
         .then(response => response.json())
         .then(data => {
+            console.log('Station data received:', data); // Debug log
+            
             if (data.success && data.station) {
                 const station = data.station;
                 document.getElementById('stationId').value = station.stat_id;
+                document.getElementById('statName').value = station.stat_name || '';
                 document.getElementById('stationLocation').value = station.location;
                 document.getElementById('placeType').value = station.place_type;
                 document.getElementById('chargeType').value = station.charge_type;
                 document.getElementById('rate').value = station.rate;
                 document.getElementById('availabilityStatus').value = station.availability_status;
                 document.getElementById('details').value = station.details || '';
+            } else {
+                console.error('Error in response:', data);
+                alert('Failed to load station data: ' + (data.message || 'Unknown error'));
             }
         })
         .catch(error => {
@@ -406,6 +447,138 @@ function handleStationDelete() {
         console.error('Error:', error);
         alert('An error occurred while deleting the station');
     });
+}
+
+// Map functionality
+function initializeMap() {
+    // Remove existing map if any
+    if (map) {
+        map.remove();
+    }
+
+    // Default center (Baguio City coordinates based on user location from prompt)
+    const defaultLat = 16.4023;
+    const defaultLng = 120.5960;
+
+    // Initialize map
+    map = L.map('map').setView([defaultLat, defaultLng], 13);
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    // Add click event to map
+    map.on('click', function(e) {
+        selectLocation(e.latlng.lat, e.latlng.lng);
+    });
+
+    // If editing and location already exists, set marker
+    const currentLocation = document.getElementById('stationLocation').value;
+    if (currentLocation) {
+        const coords = currentLocation.split(',').map(c => parseFloat(c.trim()));
+        if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+            selectLocation(coords[0], coords[1]);
+            map.setView([coords[0], coords[1]], 15);
+        }
+    }
+}
+
+function selectLocation(lat, lng) {
+    selectedLatLng = { lat, lng };
+
+    // Remove existing marker
+    if (marker) {
+        map.removeLayer(marker);
+    }
+
+    // Add new marker
+    marker = L.marker([lat, lng], {
+        draggable: true
+    }).addTo(map);
+
+    // Update marker position on drag
+    marker.on('dragend', function(e) {
+        const position = e.target.getLatLng();
+        selectLocation(position.lat, position.lng);
+    });
+
+    // Update display
+    document.getElementById('selectedCoords').textContent = 
+        `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+
+    // Enable confirm button
+    document.getElementById('confirmLocation').disabled = false;
+}
+
+function getCurrentLocation() {
+    if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser');
+        return;
+    }
+
+    const useLocationBtn = document.getElementById('useCurrentLocation');
+    const originalText = useLocationBtn.innerHTML;
+    useLocationBtn.disabled = true;
+    useLocationBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Getting location...';
+
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            
+            selectLocation(lat, lng);
+            map.setView([lat, lng], 15);
+
+            useLocationBtn.disabled = false;
+            useLocationBtn.innerHTML = originalText;
+        },
+        function(error) {
+            useLocationBtn.disabled = false;
+            useLocationBtn.innerHTML = originalText;
+            
+            let errorMessage = 'Unable to get your location. ';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage += 'Please allow location access.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage += 'Location information unavailable.';
+                    break;
+                case error.TIMEOUT:
+                    errorMessage += 'Location request timed out.';
+                    break;
+            }
+            alert(errorMessage);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
+
+function openMapModal() {
+    const mapModal = new bootstrap.Modal(document.getElementById('mapModal'));
+    mapModal.show();
+}
+
+function confirmLocationSelection() {
+    if (selectedLatLng) {
+        const locationStr = `${selectedLatLng.lat.toFixed(6)}, ${selectedLatLng.lng.toFixed(6)}`;
+        document.getElementById('stationLocation').value = locationStr;
+        
+        // Close map modal
+        const mapModal = bootstrap.Modal.getInstance(document.getElementById('mapModal'));
+        mapModal.hide();
+        
+        // Reset for next use
+        selectedLatLng = null;
+        document.getElementById('selectedCoords').textContent = 'Click on the map to select a location';
+        document.getElementById('confirmLocation').disabled = true;
+    }
 }
 
 // Accounts Functions
