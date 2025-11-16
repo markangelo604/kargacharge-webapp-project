@@ -1,6 +1,17 @@
 <?php 
     require_once 'config.php';
 
+    $action = $_POST['action'] ?? '';
+    switch($action){    
+        case 'payment_processing':
+            paymentProcessing($conn);
+            break;
+
+        default:
+            echo json_encode(['success' => false, 'message' => 'Invalid action']);
+            break;
+    }
+
     function paymentProcessing($conn) {
         $booking_id = $_POST['booking_id'] ?? '';
         $amount = $_POST['amount'] ?? '';

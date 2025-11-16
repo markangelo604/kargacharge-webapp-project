@@ -4,15 +4,15 @@
     $action = $_POST['action'] ?? '';
     switch($action){
         case 'add_station':
-            addChargingStation();
+            addChargingStation($conn);
             break;
         
         case 'delete_station':
-            deleteChargingStation();
+            deleteChargingStation($conn);
             break;
 
         case 'edit_station':
-            editChargingStation();
+            editChargingStation($conn);
             break;
 
         default:
@@ -20,7 +20,7 @@
             break;
     }
 
-    function addChargingStation(){
+    function addChargingStation($conn){
         $detail1 = $_POST['detail1'] ?? '';
         $detail2 = $_POST['detail2'] ?? '';
         $provider_id = $_POST['provider_id'] ?? '';
@@ -43,7 +43,7 @@
 
     }
 
-    function deleteChargingStation(){
+    function deleteChargingStation($conn){
         $station_id = $_POST['station_id'] ?? '';
 
         if (empty($station_id)) {
@@ -62,7 +62,7 @@
         $stmt->close();
     }
 
-    function editChargingStation(){
+    function editChargingStation($conn){
         $station_id = $_POST['station_id'] ?? '';
         $new_detail1 = $_POST['new_detail1'] ?? '';
         $new_detail2 = $_POST['new_detail2'] ?? '';

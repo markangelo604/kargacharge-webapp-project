@@ -1,6 +1,17 @@
 <?php 
     require_once 'config.php';
 
+    $action = $_POST['action'] ?? '';
+    switch($action){
+        case 'submit_review':
+            reviewSubmission($conn);
+            break;
+        
+        default:
+            echo json_encode(['success' => false, 'message' => 'Invalid action']);
+            break;
+    }
+
     function reviewSubmission($conn) {
         $client_id = $_POST['client_id'] ?? '';
         $pay_id = $_POST['pay_id'] ?? '';

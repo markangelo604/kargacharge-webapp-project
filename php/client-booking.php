@@ -4,19 +4,19 @@
     $action = $_POST['action'] ?? '';
     switch($action){
         case 'book_session':
-            bookChargingSession();
+            bookChargingSession($conn);
             break;
         
         case 'booking_payment':
-            bookingPayment();
+            bookingPayment($conn);
             break;
 
         case 'update_booking_time':
-            updateBookingTime();
+            updateBookingTime($conn);
             break;
 
         case 'cancel_booking':
-            cancelBooking();
+            cancelBooking($conn);
             break;
 
         default:
@@ -24,7 +24,7 @@
             break;
     }
 
-    function bookChargingSession() {
+    function bookChargingSession($conn) {
         $client_id = $_POST['client_id'] ?? '';
         $station_id = $_POST['station_id'] ?? '';
         $start_time = $_POST['start_time'] ?? '';
@@ -73,7 +73,7 @@
         $stmt->close();
     }
 
-    function bookingPayment() {
+    function bookingPayment($conn) {
         $booking_id = $_POST['booking_id'] ?? '';
         $amount = $_POST['amount'] ?? '';
 
@@ -97,7 +97,7 @@
         $stmt->close();
     }
 
-    function updateBookingTime() {
+    function updateBookingTime($conn) {
         $booking_id = $_POST['booking_id'] ?? '';
         $new_start_time = $_POST['new_start_time'] ?? '';
         $new_end_time = $_POST['new_end_time'] ?? '';
@@ -147,7 +147,7 @@
         $stmt->close();
     }
 
-    function cancelBooking() {
+    function cancelBooking($conn) {
         $booking_id = $_POST['booking_id'] ?? '';
 
         if (empty($booking_id)) {
