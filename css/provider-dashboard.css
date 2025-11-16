@@ -105,7 +105,287 @@ body {
 }
 
 /* Stations Tab */
+/* Stations Tab Styles */
+.stations-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
 
+.stations-header {
+    padding: 20px;
+    background: linear-gradient(135deg, #079FDB 0%, #0EA5E9 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.stations-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.add-station-btn {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    padding: 10px 16px;
+    border-radius: 12px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.add-station-btn:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.add-station-btn:active {
+    transform: translateY(0);
+}
+
+.stations-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    background: #f8f9fa;
+}
+
+/* Loading State */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #6b7280;
+    gap: 12px;
+}
+
+.loading-state p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Empty State */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #6b7280;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.empty-state svg {
+    color: #d1d5db;
+    margin-bottom: 16px;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 8px 0;
+}
+
+.empty-state p {
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Station Card */
+.station-card {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.station-card:hover {
+    box-shadow: 0 4px 12px rgba(7, 159, 219, 0.15);
+    transform: translateY(-2px);
+}
+
+.station-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.station-info {
+    flex: 1;
+}
+
+.station-location {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.station-location svg {
+    color: #079FDB;
+    flex-shrink: 0;
+}
+
+.station-place-type {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.station-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.station-action-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.edit-btn {
+    background-color: #e0f2fe;
+    color: #0284c7;
+}
+
+.edit-btn:hover {
+    background-color: #bae6fd;
+    transform: scale(1.05);
+}
+
+.delete-btn {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+.delete-btn:hover {
+    background-color: #fecaca;
+    transform: scale(1.05);
+}
+
+.station-action-btn:active {
+    transform: scale(0.95);
+}
+
+.station-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.detail-item {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.detail-label {
+    font-size: 11px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 4px 0;
+    font-weight: 600;
+}
+
+.detail-value {
+    font-size: 14px;
+    color: #1a1a1a;
+    font-weight: 600;
+    margin: 0;
+}
+
+.station-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-available {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-occupied {
+    background-color: #fed7aa;
+    color: #92400e;
+}
+
+.status-maintenance {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-out-of-service {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.station-status::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: currentColor;
+}
+
+.station-additional-details {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 12px;
+    margin-top: 12px;
+}
+
+.additional-details-label {
+    font-size: 11px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 6px 0;
+    font-weight: 600;
+}
+
+.additional-details-text {
+    font-size: 13px;
+    color: #374151;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Modal Customization for Stations */
+.modal-dialog-scrollable .modal-body {
+    max-height: calc(100vh - 200px);
+}
 
 /* Account Tab */
 .account-container {
@@ -428,6 +708,37 @@ body {
 
     .menu-text p {
         font-size: 12px;
+    }
+
+    .stations-header {
+        padding: 16px;
+    }
+
+    .stations-title {
+        font-size: 20px;
+    }
+
+    .add-station-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    .stations-list {
+        padding: 12px;
+    }
+
+    .station-card {
+        padding: 14px;
+    }
+
+    .station-details {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .station-action-btn {
+        width: 32px;
+        height: 32px;
     }
 }
 
