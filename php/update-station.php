@@ -104,35 +104,57 @@ if (!$stmt) {
 $stmt->bind_param("ssssdssii", $stat_name, $location, $place_type, $charge_type, $rate, $availability_status, $details, $stat_id, $prov_id);
 
 if ($stmt->execute()) {
-    // Handle image updates
-    if (isset($_FILES['images']) && !empty($_FILES['images']['name'][0])) {
-        $images_data = [];
-        
-        foreach ($_FILES['images']['tmp_name'] as $key => $tmp_name) {
-            if ($_FILES['images']['error'][$key] === UPLOAD_ERR_OK) {
-                $image_data = file_get_contents($tmp_name);
-                $images_data[] = $image_data;
+    // Combine existing and new images
+    $final_images = [];
+    
+    // Get existing images that weren't removed
+    if (isset($_POST['existing_images'])) {
+        $existing_imgs = json_decode($_POST['existing_images'], true);
+        if (is_array($existing_imgs)) {
+            foreach ($existing_imgs as $img_base64) {
+                $final_images[] = base64_decode($img_base64);
             }
-        }
-        
-        if (!empty($images_data)) {
-            $serialized_images = serialize($images_data);
-            
-            $img_sql = "UPDATE charging_station SET images = ? WHERE stat_id = ? AND prov_id = ?";
-            $img_stmt = $conn->prepare($img_sql);
-            $img_stmt->bind_param("sii", $serialized_images, $stat_id, $prov_id);
-            $img_stmt->execute();
-            $img_stmt->close();
         }
     }
     
-    // Handle image removal
-    if (isset($_POST['remove_images']) && $_POST['remove_images'] === 'true') {
+    // Add new images
+    if (isset($_FILES['images']) && !empty($_FILES['images']['name'][0])) {
+        foreach ($_FILES['images']['tmp_name'] as $key => $tmp_name) {
+            if ($_FILES['images']['error'][$key] === UPLOAD_ERR_OK) {
+                $image_data = file_get_contents($tmp_name);
+                $final_images[] = $image_data;
+            }
+        }
+    }
+    
+    // Update images in database
+    if (!empty($final_images)) {
+        $serialized_images = serialize($final_images);
+        $img_sql = "UPDATE charging_station SET images = ? WHERE stat_id = ? AND prov_id = ?";
+        $img_stmt = $conn->prepare($img_sql);
+        $img_stmt->bind_param("sii", $serialized_images, $stat_id, $prov_id);
+        $img_stmt->execute();
+        $img_stmt->close();
+    } else {
+        // If no images left, set to NULL
         $img_sql = "UPDATE charging_station SET images = NULL WHERE stat_id = ? AND prov_id = ?";
         $img_stmt = $conn->prepare($img_sql);
         $img_stmt->bind_param("ii", $stat_id, $prov_id);
         $img_stmt->execute();
         $img_stmt->close();
+    }
+    
+    // ADD THIS SUCCESS RESPONSE
+    if ($stmt->affected_rows > 0 || !empty($final_images) || (empty($final_images) && isset($_POST['existing_images']))) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Station updated successfully'
+        ]);
+    } else {
+        echo json_encode([
+            'success' => true,
+            'message' => 'No changes made to station'
+        ]);
     }
 } else {
     echo json_encode([
