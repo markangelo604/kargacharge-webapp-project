@@ -1,227 +1,61 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EV Owner | KargaCharge</title>
-    <link rel="icon" type="image/png" href="../assets/images/kargacharge-logo.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <link rel="stylesheet" href="../css/client-dashboard.css">
-</head>
-<body>
-    <div class="mobile-container">
-        <!-- Tab Content Container -->
-        <div class="tab-content-wrapper">
-            <!-- Map Tab -->
-            <div class="tab-content active" id="mapTab">
-                <!-- Map -->
-                <div class="map-container">
-                    <div id="mapView" style="height: 100%; width: 100%; background-color: #e8e8e8;"></div>
-                </div>
+<?php
+header('Content-Type: application/json');
+require_once 'config.php';
 
-                <!-- Search bar -->
-                <div class="search-container">
-                    <div class="search-wrapper">
-                        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
-                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
-                        </svg>
-                        <input type="text" class="search-input" placeholder="Search stations" id="searchInput">
-                        <button class="notification-btn" id="notificationBtn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bell-fill" viewBox="0 0 16 16">
-                                <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2m.995-14.901a1 1 0 1 0-1.99 0A5 5 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
+// Fetch all charging stations with provider information
+$sql = "SELECT 
+            cs.stat_id,
+            cs.stat_name,
+            cs.location,
+            cs.place_type,
+            cs.charge_type,
+            cs.rate,
+            cs.availability_status,
+            cs.details,
+            cp.name as provider_name,
+            cp.phoneno as provider_phone
+        FROM charging_station cs
+        LEFT JOIN charging_provider cp ON cs.prov_id = cp.id
+        WHERE cs.availability_status != 'Out of Service'
+        ORDER BY cs.stat_id DESC";
 
-                <!-- Map Controls -->
-                <div class="map-controls">
-                    <button class="control-btn layers-btn" id="layersBtn" title="Toggle Layers">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-layers" viewBox="0 0 16 16">
-                            <path d="M8.235 1.559a.5.5 0 0 0-.47 0l-7.5 4a.5.5 0 0 0 0 .882L3.188 8 .264 9.559a.5.5 0 0 0 0 .882l7.5 4a.5.5 0 0 0 .47 0l7.5-4a.5.5 0 0 0 0-.882L12.813 8l2.922-1.559a.5.5 0 0 0 0-.882zm3.515 7.008L14.438 10 8 13.433 1.562 10 4.25 8.567l3.515 1.874a.5.5 0 0 0 .47 0zM8 9.433 1.562 6 8 2.567 14.438 6z"/>
-                        </svg>
-                    </button>
-                    <button class="control-btn location-btn" id="locationBtn" title="My Location">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bullseye" viewBox="0 0 16 16">
-                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-                            <path d="M8 13A5 5 0 1 1 8 3a5 5 0 0 1 0 10m0 1A6 6 0 1 0 8 2a6 6 0 0 0 0 12"/>
-                            <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8"/>
-                            <path d="M9.5 8a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
+$result = $conn->query($sql);
 
-            <!-- Booking Tab -->
-            <div class="tab-content" id="bookingTab">
-                <div class="placeholder-content">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="8" x2="12" y2="16"></line>
-                        <line x1="8" y1="12" x2="16" y2="12"></line>
-                    </svg>
-                    <h2>Booking</h2>
-                    <p>Book your charging station here</p>
-                </div>
-            </div>
+if (!$result) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Database error: ' . $conn->error
+    ]);
+    exit;
+}
 
-            <!-- Saved Tab -->
-            <div class="tab-content" id="savedTab">
-                <div class="placeholder-content">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-bookmark-plus-fill" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M2 15.5V2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.74.439L8 13.069l-5.26 2.87A.5.5 0 0 1 2 15.5m6.5-11a.5.5 0 0 0-1 0V6H6a.5.5 0 0 0 0 1h1.5v1.5a.5.5 0 0 0 1 0V7H10a.5.5 0 0 0 0-1H8.5z"/>
-                    </svg>
-                    <h2>Saved Stations</h2>
-                    <p>Your favorite charging stations</p>
-                </div>
-            </div>
+$stations = [];
+while ($row = $result->fetch_assoc()) {
+    // Parse location coordinates
+    $coords = explode(',', $row['location']);
+    if (count($coords) == 2) {
+        $stations[] = [
+            'stat_id' => $row['stat_id'],
+            'stat_name' => $row['stat_name'],
+            'location' => $row['location'],
+            'latitude' => floatval(trim($coords[0])),
+            'longitude' => floatval(trim($coords[1])),
+            'place_type' => $row['place_type'],
+            'charge_type' => $row['charge_type'],
+            'rate' => floatval($row['rate']),
+            'availability_status' => $row['availability_status'],
+            'details' => $row['details'],
+            'provider_name' => $row['provider_name'],
+            'provider_phone' => $row['provider_phone']
+        ];
+    }
+}
 
-            <!-- Account Tab -->
-            <div class="tab-content" id="accountTab">
-                <div class="account-container">
-                    <!-- Account Header -->
-                    <div class="account-header">
-                        <div class="profile-section">
-                            <div class="profile-avatar">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
-                                    <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
-                                    <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
-                                </svg>
-                            </div>
-                            <div class="profile-info">
-                                <h2 class="user-name" id="displayUserName">Loading...</h2>
-                                <p class="user-email" id="displayUserEmail">Loading...</p>
-                            </div>
-                        </div>
-                    </div>
+$conn->close();
 
-                    <!-- Account Menu -->
-                    <div class="account-menu">
-                        <!-- Change Password -->
-                        <div class="menu-item" id="changePasswordBtn">
-                            <div class="menu-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-key-fill" viewBox="0 0 16 16">
-                                    <path d="M3.5 11.5a3.5 3.5 0 1 1 3.163-5H14L15.5 8 14 9.5l-1-1-1 1-1-1-1 1zm-.657.657a4.5 4.5 0 0 1 0-6.364C1.904 6.747 1 8.255 1 10a4.5 4.5 0 0 0 1.843 3.657"/>
-                                </svg>
-                            </div>
-                            <div class="menu-text">
-                                <h3>Change Password</h3>
-                                <p>Update your account password</p>
-                            </div>
-                            <div class="menu-arrow">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
-                                </svg>
-                            </div>
-                        </div>
-
-                        <!-- Booking History -->
-                        <div class="menu-item" id="bookingHistoryBtn">
-                            <div class="menu-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock-history" viewBox="0 0 16 16">
-                                    <path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022zm2.004.45a7 7 0 0 0-.985-.299l.219-.976q.576.129 1.126.342zm1.37.71a7 7 0 0 0-.439-.27l.493-.87a8 8 0 0 1 .979.654l-.615.789a7 7 0 0 0-.418-.302zm1.834 1.79a7 7 0 0 0-.653-.796l.724-.69q.406.429.747.91zm.744 1.352a7 7 0 0 0-.214-.468l.893-.45a8 8 0 0 1 .45 1.088l-.95.313a7 7 0 0 0-.179-.483m.53 2.507a7 7 0 0 0-.1-1.025l.985-.17q.1.58.116 1.17zm-.131 1.538q.05-.254.081-.51l.993.123a8 8 0 0 1-.23 1.155l-.964-.267q.069-.247.12-.501m-.952 2.379q.276-.436.486-.908l.914.405q-.24.54-.555 1.038zm-.964 1.205q.183-.183.35-.378l.758.653a8 8 0 0 1-.401.432z"/>
-                                    <path d="M8 1a7 7 0 1 0 4.95 11.95l.707.707A8.001 8.001 0 1 1 8 0z"/>
-                                    <path d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5"/>
-                                </svg>
-                            </div>
-                            <div class="menu-text">
-                                <h3>Booking History</h3>
-                                <p>View past charging sessions</p>
-                            </div>
-                            <div class="menu-arrow">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
-                                </svg>
-                            </div>
-                        </div>
-                        
-                        <!-- Logout Button -->
-                        <button class="logout-btn" id="logoutBtn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-box-arrow-right" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"/>
-                                <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/>
-                            </svg>
-                            Logout
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Change Password Modal -->
-            <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="changePasswordModalLabel">Change Password</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form id="changePasswordForm">
-                                <div class="mb-3">
-                                    <label for="currentPassword" class="form-label">Current Password</label>
-                                    <input type="password" class="form-control" id="currentPassword" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="newPassword" class="form-label">New Password</label>
-                                    <input type="password" class="form-control" id="newPassword" required minlength="8">
-                                    <div class="form-text">Password must be at least 8 characters long</div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="confirmPassword" class="form-label">Confirm New Password</label>
-                                    <input type="password" class="form-control" id="confirmPassword" required>
-                                </div>
-                                <div id="passwordError" class="alert alert-danger d-none" role="alert"></div>
-                                <div id="passwordSuccess" class="alert alert-success d-none" role="alert"></div>
-                            </form>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-primary" id="submitPasswordChange" style="background-color: #079FDB; border-color: #079FDB;">Change Password</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bottom Nav -->
-        <nav class="bottom-nav">
-            <div class="nav-item active" data-tab="mapTab">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
-                    <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
-                </svg>
-                <span>Map</span>
-            </div>
-            <div class="nav-item" data-tab="bookingTab">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="16"></line>
-                    <line x1="8" y1="12" x2="16" y2="12"></line>
-                </svg>
-                <span>Booking</span>
-            </div>
-            <div class="nav-item" data-tab="savedTab">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bookmark-plus-fill" viewBox="0 0 16 16">
-                    <path fill-rule="evenodd" d="M2 15.5V2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.74.439L8 13.069l-5.26 2.87A.5.5 0 0 1 2 15.5m6.5-11a.5.5 0 0 0-1 0V6H6a.5.5 0 0 0 0 1h1.5v1.5a.5.5 0 0 0 1 0V7H10a.5.5 0 0 0 0-1H8.5z"/>
-                </svg>
-                <span>Saved</span>
-            </div>
-            <div class="nav-item" data-tab="accountTab">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
-                    <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
-                    <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
-                </svg>
-                <span>Account</span>
-            </div>
-        </nav>
-    </div>
-    
-    <!-- Leaflet JS - MUST load before our script -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-    <!-- Our custom script - MUST load last -->
-    <script src="../js/client-dashboard.js"></script>
-</body>
-</html>
+echo json_encode([
+    'success' => true,
+    'stations' => $stations,
+    'count' => count($stations)
+]);
+?>
