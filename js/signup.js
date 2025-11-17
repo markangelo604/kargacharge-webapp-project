@@ -197,6 +197,56 @@ function togglePassword(fieldId) {
     }
 }
 
+// Check password strength
+function checkPasswordStrength() {
+    const password = document.getElementById('password').value;
+    const strengthIndicator = document.getElementById('passwordStrength');
+    
+    // Create strength indicator element if it doesn't exist
+    if (!strengthIndicator) {
+        const passwordInput = document.getElementById('password');
+        const strengthDiv = document.createElement('small');
+        strengthDiv.id = 'passwordStrength';
+        strengthDiv.className = 'form-text';
+        passwordInput.parentElement.appendChild(strengthDiv);
+    }
+    
+    const indicator = document.getElementById('passwordStrength');
+    
+    if (password.length === 0) {
+        indicator.textContent = '';
+        indicator.className = 'form-text';
+        return;
+    }
+    
+    let strength = 0;
+    let feedback = '';
+    
+    // Length check
+    if (password.length >= 8) strength++;
+    if (password.length >= 12) strength++;
+    
+    // Character variety checks
+    if (/[a-z]/.test(password)) strength++; // lowercase
+    if (/[A-Z]/.test(password)) strength++; // uppercase
+    if (/[0-9]/.test(password)) strength++; // numbers
+    if (/[^a-zA-Z0-9]/.test(password)) strength++; // special characters
+    
+    // Determine strength level
+    if (strength <= 2) {
+        feedback = 'Weak password';
+        indicator.className = 'form-text text-danger';
+    } else if (strength <= 4) {
+        feedback = 'Medium password';
+        indicator.className = 'form-text text-warning';
+    } else {
+        feedback = 'Strong password';
+        indicator.className = 'form-text text-success';
+    }
+    
+    indicator.textContent = feedback;
+}
+
 // Check if passwords match
 function checkPasswordMatch() {
     const password = document.getElementById('password').value;
