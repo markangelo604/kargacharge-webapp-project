@@ -2,7 +2,7 @@
 header('Content-Type: application/json');
 require_once 'config.php';
 
-// Fetch all charging stations with provider information
+// Fetch all charging stations with provider information and images
 $sql = "SELECT 
             cs.stat_id,
             cs.stat_name,
@@ -12,6 +12,7 @@ $sql = "SELECT
             cs.rate,
             cs.availability_status,
             cs.details,
+            cs.images,
             cp.name as provider_name,
             cp.phoneno as provider_phone
         FROM charging_station cs
@@ -34,6 +35,37 @@ while ($row = $result->fetch_assoc()) {
     // Parse location coordinates
     $coords = explode(',', $row['location']);
     if (count($coords) == 2) {
+        // Handle multiple images
+        $imagesArray = [];
+        if (!empty($row['images'])) {
+            // Try to unserialize if it's a serialized array
+            $unserializedImages = @unserialize($row['images']);
+            
+            if ($unserializedImages !== false && is_array($unserializedImages)) {
+                // It's a serialized array of images
+                foreach ($unserializedImages as $imageBlob) {
+                    if (!empty($imageBlob)) {
+                        $imagesArray[] = base64_encode($imageBlob);
+                    }
+                }
+            } else {
+                // It's a single image or concatenated with delimiter
+                // Check if there's a delimiter (e.g., "|||" or similar)
+                $delimiter = '|||';
+                if (strpos($row['images'], $delimiter) !== false) {
+                    $imageParts = explode($delimiter, $row['images']);
+                    foreach ($imageParts as $imagePart) {
+                        if (!empty($imagePart)) {
+                            $imagesArray[] = base64_encode($imagePart);
+                        }
+                    }
+                } else {
+                    // Single image
+                    $imagesArray[] = base64_encode($row['images']);
+                }
+            }
+        }
+        
         $stations[] = [
             'stat_id' => $row['stat_id'],
             'stat_name' => $row['stat_name'],
@@ -46,7 +78,8 @@ while ($row = $result->fetch_assoc()) {
             'availability_status' => $row['availability_status'],
             'details' => $row['details'],
             'provider_name' => $row['provider_name'],
-            'provider_phone' => $row['provider_phone']
+            'provider_phone' => $row['provider_phone'],
+            'images' => $imagesArray // Array of base64 encoded images
         ];
     }
 }

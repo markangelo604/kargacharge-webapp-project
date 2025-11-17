@@ -7,6 +7,9 @@ let userLocationMarker = null;
 document.addEventListener('DOMContentLoaded', function(){
     console.log('DOM Content Loaded');
     
+    // Add CSS for image slider
+    addSliderStyles();
+    
     // Elements
     const searchInput = document.getElementById('searchInput');
     const notificationBtn = document.getElementById('notificationBtn');
@@ -20,7 +23,6 @@ document.addEventListener('DOMContentLoaded', function(){
     const userId = sessionStorage.getItem('user_id');
 
     if (!userName || !userId) {
-        // No user data found, redirect to login
         alert('Please log in first');
         window.location.href = 'client-login.html';
         return;
@@ -38,29 +40,24 @@ document.addEventListener('DOMContentLoaded', function(){
 
     // Tab Switching Functionality
     function switchTab(tabId) {
-        // Remove active class from all tabs
         tabContents.forEach(tab => {
             tab.classList.remove('active');
         });
         
-        // Remove active class from all nav items
         navItems.forEach(nav => {
             nav.classList.remove('active');
         });
         
-        // Add active class to selected tab
         const selectedTab = document.getElementById(tabId);
         if (selectedTab) {
             selectedTab.classList.add('active');
         }
         
-        // Add active class to corresponding nav item
         const selectedNav = document.querySelector(`[data-tab="${tabId}"]`);
         if (selectedNav) {
             selectedNav.classList.add('active');
         }
         
-        // Refresh map when switching to map tab
         if (tabId === 'mapTab' && map) {
             setTimeout(() => {
                 map.invalidateSize();
@@ -109,7 +106,6 @@ document.addEventListener('DOMContentLoaded', function(){
     if (layersBtn) {
         layersBtn.addEventListener('click', function() {
             console.log('Layers clicked');
-            // Toggle between street and satellite view
             alert('Map layers feature coming soon!');
         });
     }
@@ -160,19 +156,134 @@ document.addEventListener('DOMContentLoaded', function(){
     }
 });
 
+// Add CSS styles for image slider
+function addSliderStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .image-slider-container {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            overflow: hidden;
+            background: #f3f4f6;
+            margin: -14px -14px 12px -14px;
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .image-slider {
+            display: flex;
+            transition: transform 0.3s ease-in-out;
+            height: 100%;
+        }
+        
+        .slider-image {
+            min-width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .slider-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            z-index: 10;
+            transition: background 0.2s;
+        }
+        
+        .slider-nav:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+        
+        .slider-nav:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+        
+        .slider-nav.prev {
+            left: 8px;
+        }
+        
+        .slider-nav.next {
+            right: 8px;
+        }
+        
+        .slider-dots {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            z-index: 10;
+        }
+        
+        .slider-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .slider-dot.active {
+            background: white;
+            width: 24px;
+            border-radius: 4px;
+        }
+        
+        .slider-counter {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 10;
+        }
+        
+        .no-image-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #9ca3af;
+            font-size: 14px;
+            background: #f3f4f6;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
 // Initialize Map with OpenStreetMap and Leaflet
 function initializeMap() {
     try {
         console.log('Starting map initialization...');
         
-        // Check if Leaflet is loaded
         if (typeof L === 'undefined') {
             console.error('Leaflet library not loaded!');
             alert('Map library failed to load. Please refresh the page.');
             return;
         }
 
-        // Get map container
         const mapContainer = document.getElementById('mapView');
         if (!mapContainer) {
             console.error('Map container not found!');
@@ -181,7 +292,7 @@ function initializeMap() {
 
         console.log('Map container found:', mapContainer);
 
-        // Default center (Baguio City coordinates based on your database)
+        // Default center (Baguio City coordinates)
         const defaultLat = 16.4023;
         const defaultLng = 120.5960;
 
@@ -316,44 +427,17 @@ function displayStationsOnMap(stations) {
         const marker = L.marker([station.latitude, station.longitude], { icon: icon })
             .addTo(map);
 
-        // Create popup content
-        const popupContent = `
-            <div style="min-width: 220px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                <h6 style="margin: 0 0 10px 0; font-weight: 700; color: #1a1a1a; font-size: 16px;">${station.stat_name}</h6>
-                <div style="background: #f8f9fa; padding: 8px; border-radius: 6px; margin-bottom: 8px;">
-                    <p style="margin: 0 0 6px 0; font-size: 13px; color: #374151;">
-                        <strong style="color: #6b7280;">Type:</strong> ${station.place_type}
-                    </p>
-                    <p style="margin: 0 0 6px 0; font-size: 13px; color: #374151;">
-                        <strong style="color: #6b7280;">Charging:</strong> ${station.charge_type}
-                    </p>
-                    <p style="margin: 0 0 6px 0; font-size: 13px; color: #374151;">
-                        <strong style="color: #6b7280;">Rate:</strong> <span style="color: #079FDB; font-weight: 600;">₱${station.rate.toFixed(2)}/kWh</span>
-                    </p>
-                    <p style="margin: 0; font-size: 13px;">
-                        <strong style="color: #6b7280;">Status:</strong> 
-                        <span style="color: ${getStatusColor(station.availability_status)}; font-weight: 700;">
-                            ${station.availability_status}
-                        </span>
-                    </p>
-                </div>
-                ${station.details ? `<p style="margin: 0 0 10px 0; font-size: 12px; color: #6b7280; font-style: italic; line-height: 1.4;">${station.details}</p>` : ''}
-                <p style="margin: 0 0 10px 0; font-size: 12px; color: #6b7280;">
-                    <strong>Provider:</strong> ${station.provider_name}
-                </p>
-                <button onclick="bookStation(${station.stat_id}, '${station.stat_name}')" 
-                    style="width: 100%; padding: 10px; background-color: ${station.availability_status === 'Available' ? '#079FDB' : '#ccc'}; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: ${station.availability_status === 'Available' ? 'pointer' : 'not-allowed'}; transition: all 0.2s;"
-                    ${station.availability_status !== 'Available' ? 'disabled' : ''}
-                    onmouseover="this.style.backgroundColor='${station.availability_status === 'Available' ? '#0588c4' : '#ccc'}'"
-                    onmouseout="this.style.backgroundColor='${station.availability_status === 'Available' ? '#079FDB' : '#ccc'}'">
-                    ${station.availability_status === 'Available' ? '⚡ Book Now' : '🚫 Not Available'}
-                </button>
-            </div>
-        `;
+        // Create popup content with image slider
+        const popupContent = createPopupContent(station);
 
         marker.bindPopup(popupContent, {
-            maxWidth: 280,
+            maxWidth: 320,
             className: 'custom-popup'
+        });
+        
+        // Initialize slider after popup opens
+        marker.on('popupopen', function() {
+            initializeImageSlider(station.stat_id);
         });
         
         markers.push(marker);
@@ -367,6 +451,175 @@ function displayStationsOnMap(stations) {
         map.fitBounds(group.getBounds().pad(0.1));
     }
 }
+
+// Create popup content with image slider
+function createPopupContent(station) {
+    const hasImages = station.images && station.images.length > 0;
+    const imageCount = hasImages ? station.images.length : 0;
+    
+    let imageSliderHTML = '';
+    
+    if (hasImages) {
+        imageSliderHTML = `
+            <div class="image-slider-container">
+                ${imageCount > 1 ? `<div class="slider-counter">1/${imageCount}</div>` : ''}
+                <div class="image-slider" id="slider-${station.stat_id}">
+                    ${station.images.map((img, idx) => `
+                        <img src="data:image/jpeg;base64,${img}" 
+                             alt="${station.stat_name} - Image ${idx + 1}"
+                             class="slider-image"
+                             onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'no-image-placeholder\\'>Image not available</div>'">
+                    `).join('')}
+                </div>
+                ${imageCount > 1 ? `
+                    <button class="slider-nav prev" onclick="moveSlider(${station.stat_id}, -1)">‹</button>
+                    <button class="slider-nav next" onclick="moveSlider(${station.stat_id}, 1)">›</button>
+                    <div class="slider-dots" id="dots-${station.stat_id}">
+                        ${station.images.map((_, idx) => `
+                            <div class="slider-dot ${idx === 0 ? 'active' : ''}" onclick="goToSlide(${station.stat_id}, ${idx})"></div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    } else {
+        imageSliderHTML = `
+            <div class="image-slider-container">
+                <div class="no-image-placeholder">No images available</div>
+            </div>
+        `;
+    }
+    
+    return `
+        <div style="min-width: 260px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            ${imageSliderHTML}
+            
+            <h6 style="margin: 0 0 12px 0; font-weight: 700; color: #1a1a1a; font-size: 17px;">${station.stat_name}</h6>
+            
+            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+                <p style="margin: 0 0 6px 0; font-size: 13px; color: #374151;">
+                    <strong style="color: #6b7280;">Type:</strong> ${station.place_type}
+                </p>
+                <p style="margin: 0 0 6px 0; font-size: 13px; color: #374151;">
+                    <strong style="color: #6b7280;">Charging:</strong> ${station.charge_type}
+                </p>
+                <p style="margin: 0 0 6px 0; font-size: 13px; color: #374151;">
+                    <strong style="color: #6b7280;">Rate:</strong> <span style="color: #079FDB; font-weight: 600;">₱${station.rate.toFixed(2)}/kWh</span>
+                </p>
+                <p style="margin: 0; font-size: 13px;">
+                    <strong style="color: #6b7280;">Status:</strong> 
+                    <span style="color: ${getStatusColor(station.availability_status)}; font-weight: 700;">
+                        ${station.availability_status}
+                    </span>
+                </p>
+            </div>
+            
+            ${station.details ? `<p style="margin: 0 0 10px 0; font-size: 12px; color: #6b7280; font-style: italic; line-height: 1.4;">${station.details}</p>` : ''}
+            
+            <p style="margin: 0 0 12px 0; font-size: 12px; color: #6b7280;">
+                <strong>Provider:</strong> ${station.provider_name}
+            </p>
+            
+            <button onclick="bookStation(${station.stat_id}, '${station.stat_name.replace(/'/g, "\\'")}')" 
+                style="width: 100%; padding: 12px; background-color: ${station.availability_status === 'Available' ? '#079FDB' : '#ccc'}; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: ${station.availability_status === 'Available' ? 'pointer' : 'not-allowed'}; transition: all 0.2s;"
+                ${station.availability_status !== 'Available' ? 'disabled' : ''}
+                onmouseover="if(this.disabled===false) this.style.backgroundColor='#0588c4'"
+                onmouseout="if(this.disabled===false) this.style.backgroundColor='#079FDB'">
+                ${station.availability_status === 'Available' ? '⚡ Book Now' : '🚫 Not Available'}
+            </button>
+        </div>
+    `;
+}
+
+// Initialize image slider
+function initializeImageSlider(stationId) {
+    const slider = document.getElementById(`slider-${stationId}`);
+    if (slider) {
+        slider.dataset.currentIndex = '0';
+        
+        // Add touch support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        slider.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        
+        slider.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe(stationId);
+        });
+        
+        function handleSwipe(id) {
+            if (touchEndX < touchStartX - 50) {
+                moveSlider(id, 1); // Swipe left
+            }
+            if (touchEndX > touchStartX + 50) {
+                moveSlider(id, -1); // Swipe right
+            }
+        }
+    }
+}
+
+// Move slider
+window.moveSlider = function(stationId, direction) {
+    const slider = document.getElementById(`slider-${stationId}`);
+    const dots = document.getElementById(`dots-${stationId}`);
+    const counter = slider.parentElement.querySelector('.slider-counter');
+    
+    if (!slider) return;
+    
+    const imageCount = slider.children.length;
+    let currentIndex = parseInt(slider.dataset.currentIndex) || 0;
+    
+    currentIndex += direction;
+    
+    // Loop around
+    if (currentIndex < 0) currentIndex = imageCount - 1;
+    if (currentIndex >= imageCount) currentIndex = 0;
+    
+    slider.dataset.currentIndex = currentIndex;
+    slider.style.transform = `translateX(-${currentIndex * 100}%)`;
+    
+    // Update counter
+    if (counter) {
+        counter.textContent = `${currentIndex + 1}/${imageCount}`;
+    }
+    
+    // Update dots
+    if (dots) {
+        const dotElements = dots.children;
+        for (let i = 0; i < dotElements.length; i++) {
+            dotElements[i].classList.toggle('active', i === currentIndex);
+        }
+    }
+};
+
+// Go to specific slide
+window.goToSlide = function(stationId, index) {
+    const slider = document.getElementById(`slider-${stationId}`);
+    const dots = document.getElementById(`dots-${stationId}`);
+    const counter = slider.parentElement.querySelector('.slider-counter');
+    
+    if (!slider) return;
+    
+    const imageCount = slider.children.length;
+    slider.dataset.currentIndex = index;
+    slider.style.transform = `translateX(-${index * 100}%)`;
+    
+    // Update counter
+    if (counter) {
+        counter.textContent = `${index + 1}/${imageCount}`;
+    }
+    
+    // Update dots
+    if (dots) {
+        const dotElements = dots.children;
+        for (let i = 0; i < dotElements.length; i++) {
+            dotElements[i].classList.toggle('active', i === index);
+        }
+    }
+};
 
 // Get status color
 function getStatusColor(status) {
@@ -408,7 +661,6 @@ function getUserLocation() {
         return;
     }
 
-    // Show loading indicator
     const locationBtn = document.getElementById('locationBtn');
     if (locationBtn) {
         locationBtn.style.backgroundColor = '#0ea5e9';
@@ -422,12 +674,10 @@ function getUserLocation() {
             
             console.log('User location found:', lat, lng);
             
-            // Remove existing user location marker
             if (userLocationMarker) {
                 map.removeLayer(userLocationMarker);
             }
 
-            // Create user location icon
             const userIcon = L.divIcon({
                 className: 'user-location-marker',
                 html: `<div style="position: relative;">
@@ -438,19 +688,16 @@ function getUserLocation() {
                 popupAnchor: [0, -11]
             });
 
-            // Add user location marker
             userLocationMarker = L.marker([lat, lng], { icon: userIcon })
                 .addTo(map)
                 .bindPopup('<div style="text-align: center; font-weight: 600;"><span style="color: #3b82f6;">📍</span> You are here</div>')
                 .openPopup();
 
-            // Center map on user location
             map.setView([lat, lng], 15, {
                 animate: true,
                 duration: 1
             });
 
-            // Reset button style
             if (locationBtn) {
                 setTimeout(() => {
                     locationBtn.style.backgroundColor = '';
@@ -476,7 +723,6 @@ function getUserLocation() {
             
             alert(errorMessage);
             
-            // Reset button style
             if (locationBtn) {
                 locationBtn.style.backgroundColor = '';
                 locationBtn.style.color = '';
@@ -497,8 +743,6 @@ window.bookStation = function(stationId, stationName) {
     const confirmed = confirm(`Would you like to book "${stationName}"?\n\nBooking functionality will be available soon!`);
     
     if (confirmed) {
-        // TODO: Implement actual booking functionality
-        // This would redirect to booking page or open booking modal
         alert(`Station ID ${stationId} selected for booking.\n\nBooking feature coming soon!`);
     }
 };
@@ -528,11 +772,9 @@ function handlePasswordChange() {
     const errorDiv = document.getElementById('passwordError');
     const successDiv = document.getElementById('passwordSuccess');
     
-    // Hide previous messages
     errorDiv.classList.add('d-none');
     successDiv.classList.add('d-none');
     
-    // Validation
     if (!currentPassword || !newPassword || !confirmPassword) {
         errorDiv.textContent = 'All fields are required';
         errorDiv.classList.remove('d-none');
@@ -557,12 +799,10 @@ function handlePasswordChange() {
         return;
     }
     
-    // Disable button during request
     const submitBtn = document.getElementById('submitPasswordChange');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Changing...';
     
-    // Send to PHP backend
     const formData = new FormData();
     formData.append('user_id', sessionStorage.getItem('user_id'));
     formData.append('current_password', currentPassword);
@@ -581,10 +821,8 @@ function handlePasswordChange() {
             successDiv.textContent = data.message;
             successDiv.classList.remove('d-none');
             
-            // Clear form
             document.getElementById('changePasswordForm').reset();
             
-            // Close modal after 2 seconds
             setTimeout(() => {
                 const modal = bootstrap.Modal.getInstance(document.getElementById('changePasswordModal'));
                 modal.hide();
@@ -606,20 +844,16 @@ function handlePasswordChange() {
 
 // Handle Logout
 function handleLogout() {
-    // Clear session storage
     sessionStorage.clear();
     
-    // Optional: Call logout endpoint to clear PHP session
     fetch('../php/logout.php', {
         method: 'POST'
     })
     .then(() => {
-        // Redirect to login page
         window.location.href = 'client-login.html';
     })
     .catch(error => {
         console.error('Logout error:', error);
-        // Still redirect even if the request fails
         window.location.href = 'client-login.html';
     });
 }
