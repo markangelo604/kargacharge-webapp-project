@@ -387,6 +387,21 @@ body {
     max-height: calc(100vh - 200px);
 }
 
+#imagePreviewContainer img,
+#existingImagesContainer img {
+    border-radius: 8px;
+}
+
+.position-relative .btn-danger {
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Account Tab */
 .account-container {
     padding: 20px;

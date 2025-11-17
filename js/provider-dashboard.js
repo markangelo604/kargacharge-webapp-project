@@ -3,6 +3,8 @@ let currentStationId = null;
 let map = null;
 let marker = null;
 let selectedLatLng = null;
+let currentExistingImages = []; // Track existing images
+let currentNewFiles = []; // Track new files to upload
 
 document.addEventListener('DOMContentLoaded', function () {
     // Elements
@@ -134,6 +136,11 @@ document.addEventListener('DOMContentLoaded', function () {
         mapModal.addEventListener('shown.bs.modal', function() {
             initializeMap();
         });
+    }
+
+    const stationImagesInput = document.getElementById('stationImages');
+    if (stationImagesInput) {
+        stationImagesInput.addEventListener('change', handleNewImagesSelect);
     }
 
     // Account tab functionality
@@ -290,6 +297,7 @@ function openStationModal(mode, stationId = null) {
     
     // Reset form and messages
     form.reset();
+    resetImageHandling(); // Add this line
     if (errorDiv) errorDiv.classList.add('d-none');
     if (successDiv) successDiv.classList.add('d-none');
     
@@ -308,7 +316,7 @@ function loadStationData(stationId) {
     fetch(`../php/get-station-details.php?stat_id=${stationId}`)
         .then(response => response.json())
         .then(data => {
-            console.log('Station data received:', data); // Debug log
+            console.log('Station data received:', data);
             
             if (data.success && data.station) {
                 const station = data.station;
@@ -320,6 +328,10 @@ function loadStationData(stationId) {
                 document.getElementById('rate').value = station.rate;
                 document.getElementById('availabilityStatus').value = station.availability_status;
                 document.getElementById('details').value = station.details || '';
+                
+                // Load existing images
+                currentExistingImages = station.images || [];
+                displayExistingImages(currentExistingImages);
             } else {
                 console.error('Error in response:', data);
                 alert('Failed to load station data: ' + (data.message || 'Unknown error'));
@@ -337,25 +349,45 @@ function handleStationSubmit() {
     const successDiv = document.getElementById('stationSuccess');
     const submitBtn = document.getElementById('submitStation');
     
-    // Hide previous messages
     if (errorDiv) errorDiv.classList.add('d-none');
     if (successDiv) successDiv.classList.add('d-none');
     
-    // Validate form
     if (!form.checkValidity()) {
         form.reportValidity();
         return;
     }
     
-    // Disable button
     submitBtn.disabled = true;
     submitBtn.textContent = 'Saving...';
     
-    // Prepare form data
-    const formData = new FormData(form);
+    const formData = new FormData();
+    
+    // Add all form fields except images
     formData.append('prov_id', sessionStorage.getItem('user_id'));
+    formData.append('stat_name', document.getElementById('statName').value);
+    formData.append('location', document.getElementById('stationLocation').value);
+    formData.append('place_type', document.getElementById('placeType').value);
+    formData.append('charge_type', document.getElementById('chargeType').value);
+    formData.append('rate', document.getElementById('rate').value);
+    formData.append('availability_status', document.getElementById('availabilityStatus').value);
+    formData.append('details', document.getElementById('details').value);
     
     const stationId = document.getElementById('stationId').value;
+    if (stationId) {
+        formData.append('stat_id', stationId);
+    }
+    
+    // Add new images
+    currentNewFiles.forEach((file) => {
+        formData.append('images[]', file);
+    });
+    
+    // Send existing images data (for edit mode)
+    if (stationId) {
+        const remainingImages = currentExistingImages.filter(img => img !== null);
+        formData.append('existing_images', JSON.stringify(remainingImages));
+    }
+    
     const endpoint = stationId ? '../php/update-station.php' : '../php/add-station.php';
     
     fetch(endpoint, {
@@ -374,15 +406,14 @@ function handleStationSubmit() {
                 successDiv.classList.remove('d-none');
             }
             
-            // Reload stations
             loadProviderStations();
             
-            // Close modal after delay
             setTimeout(() => {
                 const modal = bootstrap.Modal.getInstance(document.getElementById('stationModal'));
                 modal.hide();
                 submitBtn.disabled = false;
                 if (successDiv) successDiv.classList.add('d-none');
+                resetImageHandling();
             }, 1500);
         } else {
             if (errorDiv) {
@@ -679,6 +710,117 @@ function handleProviderPasswordChange(){
         errorDiv.classList.remove('d-none');
         console.error('Error:', error);
     });
+}
+
+function handleNewImagesSelect(event) {
+    const files = Array.from(event.target.files);
+    currentNewFiles = files;
+    displayNewImagePreviews();
+}
+
+function displayNewImagePreviews() {
+    const container = document.getElementById('imagePreviewContainer');
+    container.innerHTML = '';
+    
+    if (currentNewFiles.length === 0) return;
+    
+    const label = document.createElement('small');
+    label.className = 'text-muted d-block mb-2';
+    label.textContent = 'New Images to Upload:';
+    container.appendChild(label);
+    
+    const imgContainer = document.createElement('div');
+    imgContainer.className = 'd-flex flex-wrap gap-2';
+    
+    currentNewFiles.forEach((file, index) => {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const imgDiv = document.createElement('div');
+            imgDiv.className = 'position-relative';
+            imgDiv.style.width = '100px';
+            imgDiv.style.height = '100px';
+            
+            imgDiv.innerHTML = `
+                <img src="${e.target.result}" class="img-thumbnail" 
+                     style="width: 100%; height: 100%; object-fit: cover;">
+                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 p-1" 
+                        onclick="removeNewImage(${index})" title="Remove">
+                    ×
+                </button>
+            `;
+            
+            imgContainer.appendChild(imgDiv);
+        };
+        
+        reader.readAsDataURL(file);
+    });
+    
+    container.appendChild(imgContainer);
+}
+
+function removeNewImage(index) {
+    currentNewFiles.splice(index, 1);
+    
+    // Update file input
+    const dt = new DataTransfer();
+    currentNewFiles.forEach(file => dt.items.add(file));
+    document.getElementById('stationImages').files = dt.files;
+    
+    displayNewImagePreviews();
+}
+
+function displayExistingImages(images) {
+    const container = document.getElementById('existingImagesContainer');
+    container.innerHTML = '';
+    
+    // Filter out null/removed images
+    const validImages = images.filter(img => img !== null);
+    
+    if (validImages.length === 0) return;
+    
+    const label = document.createElement('small');
+    label.className = 'text-muted d-block mb-2';
+    label.textContent = 'Current Images:';
+    container.appendChild(label);
+    
+    const imgContainer = document.createElement('div');
+    imgContainer.className = 'd-flex flex-wrap gap-2';
+    
+    images.forEach((imgBase64, index) => {
+        if (imgBase64 === null) return; // Skip removed images
+        
+        const imgDiv = document.createElement('div');
+        imgDiv.className = 'position-relative';
+        imgDiv.style.width = '100px';
+        imgDiv.style.height = '100px';
+        
+        imgDiv.innerHTML = `
+            <img src="data:image/jpeg;base64,${imgBase64}" class="img-thumbnail" 
+                 style="width: 100%; height: 100%; object-fit: cover;">
+            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 p-1" 
+                    onclick="removeExistingImage(${index})" title="Remove">
+                ×
+            </button>
+        `;
+        
+        imgContainer.appendChild(imgDiv);
+    });
+    
+    container.appendChild(imgContainer);
+}
+
+function removeExistingImage(index) {
+    currentExistingImages[index] = null;
+    displayExistingImages(currentExistingImages);
+}
+
+function resetImageHandling() {
+    currentExistingImages = [];
+    currentNewFiles = [];
+    document.getElementById('imagePreviewContainer').innerHTML = '';
+    document.getElementById('existingImagesContainer').innerHTML = '';
+    document.getElementById('stationImages').value = '';
 }
 
 function handleProviderLogout(){
