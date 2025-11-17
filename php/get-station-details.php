@@ -14,7 +14,7 @@ if (!isset($_GET['stat_id']) || empty($_GET['stat_id'])) {
 $stat_id = intval($_GET['stat_id']);
 
 // Prepare and execute query
-$sql = "SELECT stat_id, stat_name, location, place_type, charge_type, rate, availability_status, details, prov_id  
+$sql = "SELECT stat_id, stat_name, location, place_type, charge_type, rate, availability_status, details, prov_id, images  
         FROM charging_station 
         WHERE stat_id = ?";
 
@@ -44,6 +44,17 @@ if ($result->num_rows === 0) {
 
 $station = $result->fetch_assoc();
 
+// Process images
+$images_array = [];
+if ($station['images']) {
+    $unserialized = @unserialize($station['images']);
+    if ($unserialized !== false) {
+        foreach ($unserialized as $img_data) {
+            $images_array[] = base64_encode($img_data);
+        }
+    }
+}
+
 $stmt->close();
 $conn->close();
 
@@ -58,7 +69,8 @@ echo json_encode([
         'rate' => $station['rate'],
         'availability_status' => $station['availability_status'],
         'details' => $station['details'],
-        'prov_id' => $station['prov_id']
+        'prov_id' => $station['prov_id'],
+        'images' => $images_array
     ]
 ]);
 ?>

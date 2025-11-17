@@ -76,6 +76,29 @@ $stmt->bind_param("sssdssis", $location, $place_type, $charge_type, $rate, $avai
 if ($stmt->execute()) {
     $new_station_id = $stmt->insert_id;
     
+    // Handle multiple image uploads
+    if (isset($_FILES['images']) && !empty($_FILES['images']['name'][0])) {
+        $images_data = [];
+        
+        foreach ($_FILES['images']['tmp_name'] as $key => $tmp_name) {
+            if ($_FILES['images']['error'][$key] === UPLOAD_ERR_OK) {
+                $image_data = file_get_contents($tmp_name);
+                $images_data[] = $image_data;
+            }
+        }
+        
+        if (!empty($images_data)) {
+            // Serialize images array
+            $serialized_images = serialize($images_data);
+            
+            $update_sql = "UPDATE charging_station SET images = ? WHERE stat_id = ?";
+            $update_stmt = $conn->prepare($update_sql);
+            $update_stmt->bind_param("si", $serialized_images, $new_station_id);
+            $update_stmt->execute();
+            $update_stmt->close();
+        }
+    }
+    
     echo json_encode([
         'success' => true,
         'message' => 'Station added successfully',

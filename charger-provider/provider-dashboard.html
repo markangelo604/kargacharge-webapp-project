@@ -146,6 +146,19 @@
                             </div>
 
                             <div class="mb-3">
+                                <label for="stationImages" class="form-label">Station Images</label>
+                                <input type="file" class="form-control" id="stationImages" name="images[]" 
+                                    accept="image/*" multiple>
+                                <div class="form-text">You can select multiple images (Max 5MB each)</div>
+                                
+                                <!-- Preview container -->
+                                <div id="imagePreviewContainer" class="mt-2 d-flex flex-wrap gap-2"></div>
+                                
+                                <!-- Existing images for edit mode -->
+                                <div id="existingImagesContainer" class="mt-2"></div>
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="details" class="form-label">Additional Details</label>
                                 <textarea class="form-control" id="details" name="details" 
                                         rows="3" placeholder="Enter any additional information about this station"></textarea>

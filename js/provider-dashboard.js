@@ -136,6 +136,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    const stationImagesInput = document.getElementById('stationImages');
+    if (stationImagesInput) {
+        stationImagesInput.addEventListener('change', previewImages);
+    }
+
     // Account tab functionality
     loadProviderAccountInfo();
 
@@ -320,6 +325,11 @@ function loadStationData(stationId) {
                 document.getElementById('rate').value = station.rate;
                 document.getElementById('availabilityStatus').value = station.availability_status;
                 document.getElementById('details').value = station.details || '';
+
+                // load existing images
+                existingImages = station.images || [];
+                imagesToRemove = [];
+                displayExistingImages(existingImages);
             } else {
                 console.error('Error in response:', data);
                 alert('Failed to load station data: ' + (data.message || 'Unknown error'));
@@ -357,6 +367,10 @@ function handleStationSubmit() {
     
     const stationId = document.getElementById('stationId').value;
     const endpoint = stationId ? '../php/update-station.php' : '../php/add-station.php';
+    
+    if (imagesToRemove.length > 0 && imagesToRemove.length === existingImages.length) {
+        formData.append('remove_images', 'true');
+    }
     
     fetch(endpoint, {
         method: 'POST',
@@ -679,6 +693,100 @@ function handleProviderPasswordChange(){
         errorDiv.classList.remove('d-none');
         console.error('Error:', error);
     });
+}
+
+function previewImages(event) {
+    const container = document.getElementById('imagePreviewContainer');
+    container.innerHTML = '';
+    
+    const files = event.target.files;
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const imgDiv = document.createElement('div');
+            imgDiv.className = 'position-relative';
+            imgDiv.style.width = '100px';
+            imgDiv.style.height = '100px';
+            
+            imgDiv.innerHTML = `
+                <img src="${e.target.result}" class="img-thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
+                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 p-1" 
+                        onclick="removeImagePreview(this, ${i})">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+                    </svg>
+                </button>
+            `;
+            
+            container.appendChild(imgDiv);
+        };
+        
+        reader.readAsDataURL(file);
+    }
+}
+
+function removeImagePreview(button, index) {
+    const input = document.getElementById('stationImages');
+    const dt = new DataTransfer();
+    const files = input.files;
+    
+    for (let i = 0; i < files.length; i++) {
+        if (i !== index) {
+            dt.items.add(files[i]);
+        }
+    }
+    
+    input.files = dt.files;
+    previewImages({ target: input });
+}
+
+function displayExistingImages(images) {
+    const container = document.getElementById('existingImagesContainer');
+    container.innerHTML = '';
+    
+    if (images && images.length > 0) {
+        const label = document.createElement('small');
+        label.className = 'text-muted d-block mb-2';
+        label.textContent = 'Existing Images:';
+        container.appendChild(label);
+        
+        const imgContainer = document.createElement('div');
+        imgContainer.className = 'd-flex flex-wrap gap-2';
+        
+        images.forEach((imgBase64, index) => {
+            const imgDiv = document.createElement('div');
+            imgDiv.className = 'position-relative';
+            imgDiv.style.width = '100px';
+            imgDiv.style.height = '100px';
+            
+            imgDiv.innerHTML = `
+                <img src="data:image/jpeg;base64,${imgBase64}" class="img-thumbnail" 
+                     style="width: 100%; height: 100%; object-fit: cover;">
+                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 p-1" 
+                        onclick="removeExistingImage(${index})">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+                    </svg>
+                </button>
+            `;
+            
+            imgContainer.appendChild(imgDiv);
+        });
+        
+        container.appendChild(imgContainer);
+    }
+}
+
+let existingImages = [];
+let imagesToRemove = [];
+
+function removeExistingImage(index) {
+    imagesToRemove.push(index);
+    existingImages[index] = null;
+    displayExistingImages(existingImages.filter(img => img !== null));
 }
 
 function handleProviderLogout(){
