@@ -1,4 +1,4 @@
-# Team M3DL Minimum Viable Product - Kargacharge WebApp
+# Team M3DL(N) Minimum Viable Product - Kargacharge WebApp
 
 This repository contains our Minimum Viable Product of our Project in Software Engineering and Technopreneurship course.
 
@@ -8,6 +8,7 @@ This repository contains our Minimum Viable Product of our Project in Software E
 - **Manaois, John Michael** - [@mightjm](https://github.com/mightjm)
 - **Masa-ad, Zyrus Ysam** - [@zyrusmasaad-arch](https://github.com/zyrusmasaad-arch)
 - **Misagal, Alexander John** - [@alex-misagal](https://github.com/alex-misagal)
+- **Nicolas, Ysac Nicolas** - [@Nicolas-Ysac](https://github.com/Nicolas-Ysac)
 
 ## 📞 Contact & Support
 For questions about this project:
