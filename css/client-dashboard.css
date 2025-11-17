@@ -62,19 +62,88 @@ body {
     overflow: hidden;
 }
 
-.map-placeholder {
+/* Map View */
+#mapView {
     width: 100%;
     height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%);
 }
 
-.map-placeholder p {
+/* Leaflet popup customization */
+.leaflet-popup-content-wrapper {
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.leaflet-popup-content {
+    margin: 14px !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.leaflet-popup-tip {
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom marker animations */
+.custom-marker {
+    animation: markerBounce 0.5s ease-out;
+}
+
+@keyframes markerBounce {
+    0% {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    50% {
+        transform: translateY(5px);
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.user-location-marker div {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+}
+
+/* Placeholder content for empty tabs */
+.placeholder-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
     color: #999;
-    font-size: 16px;
-    font-weight: 500;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.placeholder-content svg {
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.placeholder-content h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+}
+
+.placeholder-content p {
+    font-size: 14px;
+    color: #666;
 }
 
 /* Search Container */
@@ -83,7 +152,7 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    z-index: 100;
+    z-index: 1000;
     padding: 16px;
 }
 
@@ -141,7 +210,7 @@ body {
     position: absolute;
     right: 16px;
     bottom: 100px;
-    z-index: 50;
+    z-index: 1000;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -171,10 +240,6 @@ body {
 .control-btn:active {
     transform: scale(0.95);
 }
-
-/* Booking Tab */
-
-/* Saved Tab */
 
 /* Account Tab Styles */
 .account-container {
@@ -489,4 +554,15 @@ body {
     .bottom-nav {
         padding-bottom: max(12px, env(safe-area-inset-bottom));
     }
+}
+
+/* Leaflet control adjustments */
+.leaflet-control-zoom {
+    display: none; /* Hide default zoom controls since we have custom ones */
+}
+
+.leaflet-control-attribution {
+    font-size: 10px;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 2px 5px;
 }

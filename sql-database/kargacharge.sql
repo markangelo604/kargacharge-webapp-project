@@ -66,8 +66,8 @@ CREATE TABLE IF NOT EXISTS `charging_provider` (
 --
 
 INSERT INTO `charging_provider` (`id`, `email`, `password_hash`, `phoneno`, `name`, `verification_code`, `is_verified`) VALUES
-(2564089, 'markangelodomalanta05@gmail.com', '$2y$12$5uafh5mxOC/UpamlAHv76OXZ72fKpjCxqG99rF8koSv/lTi/3fV/6', '+639279126180', 'MARK ANGELO DOMALANTA', 429055, 1),
-(9168225, 'layatchrysander5@gmail.com', '$2y$12$5uafh5mxOC/UpamlAHv76OXZ72fKpjCxqG99rF8koSv/lTi/3fV/6', '+639123456789', 'CHRYSANDER LAY-AT', 365012, 1);
+(2564089, 'nopenopenope@gmail.com', '$2y$12$5uafh5mxOC/UpamlAHv76OXZ72fKpjCxqG99rF8koSv/lTi/3fV/6', '+639279126180', 'MARK ANGELO DOMALANTA', 429055, 1),
+(9168225, 'nopenope@gmail.com', '$2y$12$5uafh5mxOC/UpamlAHv76OXZ72fKpjCxqG99rF8koSv/lTi/3fV/6', '+639123456789', 'CHRYSANDER LAY-AT', 365012, 1);
 
 -- --------------------------------------------------------
 
@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS `ev_owner` (
 --
 
 INSERT INTO `ev_owner` (`id`, `email`, `password_hash`, `phoneno`, `name`, `verification_code`, `is_verified`) VALUES
-(5047020, 'domalantamarkangelo@gmail.com', '$2y$12$faOtpxZZ5qKksbxZjJyiXOMBQY5qXhpWJxQgsJf3JanX8DH2zfehy', '+639279126180', 'MARK ANGELO DOMALANTA', 902295, 1);
+(5047020, 'nopenopenope@gmail.com', '$2y$12$faOtpxZZ5qKksbxZjJyiXOMBQY5qXhpWJxQgsJf3JanX8DH2zfehy', '+639279126180', 'MARK ANGELO DOMALANTA', 902295, 1);
 
 -- --------------------------------------------------------
 

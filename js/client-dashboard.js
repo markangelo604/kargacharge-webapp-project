@@ -1,4 +1,12 @@
+// Global variables for map
+let map = null;
+let markers = [];
+let allStations = [];
+let userLocationMarker = null;
+
 document.addEventListener('DOMContentLoaded', function(){
+    console.log('DOM Content Loaded');
+    
     // Elements
     const searchInput = document.getElementById('searchInput');
     const notificationBtn = document.getElementById('notificationBtn');
@@ -14,12 +22,19 @@ document.addEventListener('DOMContentLoaded', function(){
     if (!userName || !userId) {
         // No user data found, redirect to login
         alert('Please log in first');
-        window.location.href = '../ev-owner/client-login.html';
+        window.location.href = 'client-login.html';
         return;
     }
 
     // Set the page title with user name
     document.title = `${userName} | KargaCharge`;
+    console.log('User logged in:', userName);
+
+    // Initialize map after a short delay to ensure DOM is ready
+    setTimeout(() => {
+        console.log('Initializing map...');
+        initializeMap();
+    }, 1500);
 
     // Tab Switching Functionality
     function switchTab(tabId) {
@@ -45,6 +60,13 @@ document.addEventListener('DOMContentLoaded', function(){
             selectedNav.classList.add('active');
         }
         
+        // Refresh map when switching to map tab
+        if (tabId === 'mapTab' && map) {
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        }
+        
         console.log('Switched to tab:', tabId);
     }
 
@@ -62,9 +84,8 @@ document.addEventListener('DOMContentLoaded', function(){
     // Search functionality
     if (searchInput){
         searchInput.addEventListener('input', function(e){
-            const query = e.target.value;
-            console.log('Searching for: ', query);
-            // TODO: Add search functionality
+            const query = e.target.value.toLowerCase();
+            filterStations(query);
         });
 
         searchInput.addEventListener('focus', function() {
@@ -80,7 +101,6 @@ document.addEventListener('DOMContentLoaded', function(){
     if (notificationBtn){
         notificationBtn.addEventListener('click', function() {
             console.log('Notification clicked');
-            // TODO: Implement notification functionality
             alert('Notifications feature coming soon!');
         });
     }
@@ -89,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if (layersBtn) {
         layersBtn.addEventListener('click', function() {
             console.log('Layers clicked');
-            // TODO: Implement map layers functionality
+            // Toggle between street and satellite view
             alert('Map layers feature coming soon!');
         });
     }
@@ -97,33 +117,13 @@ document.addEventListener('DOMContentLoaded', function(){
     // Location button
     if (locationBtn) {
         locationBtn.addEventListener('click', function() {
-            console.log('Location clicked');
-            // TODO: Implement geolocation functionality
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        console.log('User location:', lat, lng);
-                        alert(`Location found: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
-                        // TODO: Center map on user location
-                    },
-                    function(error) {
-                        console.error('Error getting location:', error);
-                        alert('Unable to get your location. Please enable location services.');
-                    }
-                );
-            } else {
-                alert('Geolocation is not supported by your browser.');
-            }
+            getUserLocation();
         });
     }
 
-
     // Account tab
-
-    // Load account info
     loadAccountInfo();
+    
     // Change Password Button
     const changePasswordBtn = document.getElementById('changePasswordBtn');
     if (changePasswordBtn) {
@@ -146,8 +146,6 @@ document.addEventListener('DOMContentLoaded', function(){
     if (bookingHistoryBtn) {
         bookingHistoryBtn.addEventListener('click', function() {
             alert('Booking History page coming soon!');
-            // TODO: Redirect to booking-history.html
-            // window.location.href = 'booking-history.html';
         });
     }
     
@@ -160,9 +158,350 @@ document.addEventListener('DOMContentLoaded', function(){
             }
         });
     }
-
 });
 
+// Initialize Map with OpenStreetMap and Leaflet
+function initializeMap() {
+    try {
+        console.log('Starting map initialization...');
+        
+        // Check if Leaflet is loaded
+        if (typeof L === 'undefined') {
+            console.error('Leaflet library not loaded!');
+            alert('Map library failed to load. Please refresh the page.');
+            return;
+        }
+
+        // Get map container
+        const mapContainer = document.getElementById('mapView');
+        if (!mapContainer) {
+            console.error('Map container not found!');
+            return;
+        }
+
+        console.log('Map container found:', mapContainer);
+
+        // Default center (Baguio City coordinates based on your database)
+        const defaultLat = 16.4023;
+        const defaultLng = 120.5960;
+
+        // Initialize map
+        map = L.map('mapView', {
+            center: [defaultLat, defaultLng],
+            zoom: 13,
+            zoomControl: true
+        });
+
+        console.log('Map object created');
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19,
+            minZoom: 3
+        }).addTo(map);
+
+        console.log('Tiles added to map');
+
+        // Force map to recalculate size
+        setTimeout(() => {
+            map.invalidateSize();
+            console.log('Map size invalidated');
+        }, 100);
+
+        // Load charging stations
+        loadChargingStations();
+
+        // Try to get user's location
+        getUserLocation();
+
+        console.log('Map initialized successfully!');
+    } catch (error) {
+        console.error('Error initializing map:', error);
+        alert('Failed to initialize map: ' + error.message);
+    }
+}
+
+// Load all charging stations from database
+function loadChargingStations() {
+    console.log('Loading charging stations...');
+    
+    fetch('../php/get-all-stations.php')
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Stations data received:', data);
+            
+            if (data.success && data.stations) {
+                allStations = data.stations;
+                displayStationsOnMap(data.stations);
+                console.log(`Successfully loaded ${data.count} charging stations`);
+            } else {
+                console.error('Failed to load stations:', data.message);
+                alert('Failed to load charging stations: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error loading stations:', error);
+            alert('Error loading charging stations. Please check console for details.');
+        });
+}
+
+// Display stations on map
+function displayStationsOnMap(stations) {
+    console.log('Displaying stations on map:', stations.length);
+    
+    // Clear existing markers
+    markers.forEach(marker => {
+        map.removeLayer(marker);
+    });
+    markers = [];
+
+    if (stations.length === 0) {
+        console.warn('No stations to display');
+        return;
+    }
+
+    // Create custom icons based on availability
+    const availableIcon = L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="background-color: #10b981; width: 32px; height: 32px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="white" viewBox="0 0 16 16">
+                    <path d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09z"/>
+                </svg>
+            </div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -16]
+    });
+
+    const occupiedIcon = L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="background-color: #f59e0b; width: 32px; height: 32px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="white" viewBox="0 0 16 16">
+                    <path d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09z"/>
+                </svg>
+            </div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -16]
+    });
+
+    const maintenanceIcon = L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="background-color: #ef4444; width: 32px; height: 32px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="white" viewBox="0 0 16 16">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                    <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+                </svg>
+            </div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -16]
+    });
+
+    // Add markers for each station
+    stations.forEach((station, index) => {
+        console.log(`Adding marker ${index + 1}:`, station.stat_name, station.latitude, station.longitude);
+        
+        let icon = availableIcon;
+        if (station.availability_status === 'Occupied') {
+            icon = occupiedIcon;
+        } else if (station.availability_status === 'Maintenance') {
+            icon = maintenanceIcon;
+        }
+
+        const marker = L.marker([station.latitude, station.longitude], { icon: icon })
+            .addTo(map);
+
+        // Create popup content
+        const popupContent = `
+            <div style="min-width: 220px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                <h6 style="margin: 0 0 10px 0; font-weight: 700; color: #1a1a1a; font-size: 16px;">${station.stat_name}</h6>
+                <div style="background: #f8f9fa; padding: 8px; border-radius: 6px; margin-bottom: 8px;">
+                    <p style="margin: 0 0 6px 0; font-size: 13px; color: #374151;">
+                        <strong style="color: #6b7280;">Type:</strong> ${station.place_type}
+                    </p>
+                    <p style="margin: 0 0 6px 0; font-size: 13px; color: #374151;">
+                        <strong style="color: #6b7280;">Charging:</strong> ${station.charge_type}
+                    </p>
+                    <p style="margin: 0 0 6px 0; font-size: 13px; color: #374151;">
+                        <strong style="color: #6b7280;">Rate:</strong> <span style="color: #079FDB; font-weight: 600;">₱${station.rate.toFixed(2)}/kWh</span>
+                    </p>
+                    <p style="margin: 0; font-size: 13px;">
+                        <strong style="color: #6b7280;">Status:</strong> 
+                        <span style="color: ${getStatusColor(station.availability_status)}; font-weight: 700;">
+                            ${station.availability_status}
+                        </span>
+                    </p>
+                </div>
+                ${station.details ? `<p style="margin: 0 0 10px 0; font-size: 12px; color: #6b7280; font-style: italic; line-height: 1.4;">${station.details}</p>` : ''}
+                <p style="margin: 0 0 10px 0; font-size: 12px; color: #6b7280;">
+                    <strong>Provider:</strong> ${station.provider_name}
+                </p>
+                <button onclick="bookStation(${station.stat_id}, '${station.stat_name}')" 
+                    style="width: 100%; padding: 10px; background-color: ${station.availability_status === 'Available' ? '#079FDB' : '#ccc'}; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: ${station.availability_status === 'Available' ? 'pointer' : 'not-allowed'}; transition: all 0.2s;"
+                    ${station.availability_status !== 'Available' ? 'disabled' : ''}
+                    onmouseover="this.style.backgroundColor='${station.availability_status === 'Available' ? '#0588c4' : '#ccc'}'"
+                    onmouseout="this.style.backgroundColor='${station.availability_status === 'Available' ? '#079FDB' : '#ccc'}'">
+                    ${station.availability_status === 'Available' ? '⚡ Book Now' : '🚫 Not Available'}
+                </button>
+            </div>
+        `;
+
+        marker.bindPopup(popupContent, {
+            maxWidth: 280,
+            className: 'custom-popup'
+        });
+        
+        markers.push(marker);
+    });
+
+    console.log(`Added ${markers.length} markers to map`);
+    
+    // Fit map to show all markers if there are any
+    if (markers.length > 0) {
+        const group = L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
+}
+
+// Get status color
+function getStatusColor(status) {
+    switch(status) {
+        case 'Available': return '#10b981';
+        case 'Occupied': return '#f59e0b';
+        case 'Maintenance': return '#ef4444';
+        default: return '#6b7280';
+    }
+}
+
+// Filter stations based on search query
+function filterStations(query) {
+    console.log('Filtering stations with query:', query);
+    
+    if (!query) {
+        displayStationsOnMap(allStations);
+        return;
+    }
+
+    const filtered = allStations.filter(station => {
+        return station.stat_name.toLowerCase().includes(query) ||
+               station.place_type.toLowerCase().includes(query) ||
+               station.charge_type.toLowerCase().includes(query) ||
+               station.provider_name.toLowerCase().includes(query) ||
+               station.details.toLowerCase().includes(query);
+    });
+
+    console.log(`Found ${filtered.length} matching stations`);
+    displayStationsOnMap(filtered);
+}
+
+// Get user's current location
+function getUserLocation() {
+    console.log('Getting user location...');
+    
+    if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser');
+        return;
+    }
+
+    // Show loading indicator
+    const locationBtn = document.getElementById('locationBtn');
+    if (locationBtn) {
+        locationBtn.style.backgroundColor = '#0ea5e9';
+        locationBtn.style.color = 'white';
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            
+            console.log('User location found:', lat, lng);
+            
+            // Remove existing user location marker
+            if (userLocationMarker) {
+                map.removeLayer(userLocationMarker);
+            }
+
+            // Create user location icon
+            const userIcon = L.divIcon({
+                className: 'user-location-marker',
+                html: `<div style="position: relative;">
+                        <div style="background-color: #3b82f6; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3), 0 2px 8px rgba(0,0,0,0.3); animation: pulse 2s infinite;"></div>
+                    </div>`,
+                iconSize: [22, 22],
+                iconAnchor: [11, 11],
+                popupAnchor: [0, -11]
+            });
+
+            // Add user location marker
+            userLocationMarker = L.marker([lat, lng], { icon: userIcon })
+                .addTo(map)
+                .bindPopup('<div style="text-align: center; font-weight: 600;"><span style="color: #3b82f6;">📍</span> You are here</div>')
+                .openPopup();
+
+            // Center map on user location
+            map.setView([lat, lng], 15, {
+                animate: true,
+                duration: 1
+            });
+
+            // Reset button style
+            if (locationBtn) {
+                setTimeout(() => {
+                    locationBtn.style.backgroundColor = '';
+                    locationBtn.style.color = '';
+                }, 500);
+            }
+        },
+        function(error) {
+            console.error('Error getting location:', error);
+            
+            let errorMessage = 'Unable to get your location. ';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage += 'Please allow location access.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage += 'Location information unavailable.';
+                    break;
+                case error.TIMEOUT:
+                    errorMessage += 'Location request timed out.';
+                    break;
+            }
+            
+            alert(errorMessage);
+            
+            // Reset button style
+            if (locationBtn) {
+                locationBtn.style.backgroundColor = '';
+                locationBtn.style.color = '';
+            }
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
+
+// Book station function
+window.bookStation = function(stationId, stationName) {
+    console.log('Booking station:', stationId, stationName);
+    
+    const confirmed = confirm(`Would you like to book "${stationName}"?\n\nBooking functionality will be available soon!`);
+    
+    if (confirmed) {
+        // TODO: Implement actual booking functionality
+        // This would redirect to booking page or open booking modal
+        alert(`Station ID ${stationId} selected for booking.\n\nBooking feature coming soon!`);
+    }
+};
 
 // Load user information in Account Tab
 function loadAccountInfo() {
