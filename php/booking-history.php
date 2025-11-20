@@ -11,8 +11,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-
 $user_id = $_POST['user_id'] ?? '';
+$status = $_POST['status'] ?? '';
+
 
 if (empty($user_id)) {
     echo json_encode([
@@ -23,8 +24,18 @@ if (empty($user_id)) {
     exit;
 }
 
-$stmt = $conn->prepare("SELECT stat_name, start_time, end_time, status, rate FROM booking INNER JOIN charging_station ON booking.stat_id = charging_station.id WHERE evown_id = ?");
-$stmt ->bind_param("i", $user_id);
+$query = "SELECT stat_name, start_time, end_time, status, rate FROM booking INNER JOIN charging_station ON booking.stat_id = charging_station.id WHERE evown_id = ?";
+$types = "i";
+$params = [$user_id];
+
+if (!empty($status)) {
+    $query .= " AND status = ?";
+    $types .= "s";
+    $params[] = $status;
+}
+
+$stmt = $conn->prepare($query);
+$stmt ->bind_param($types, ...$params);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -33,7 +44,7 @@ if ($result->num_rows > 0) {
 
     $stmt->close();
     $conn->close();
-    
+
     // Return booking details
     echo json_encode([
         'success' => true,
