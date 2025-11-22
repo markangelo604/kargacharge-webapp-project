@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking | KargaCharge</title>
+    <link rel="icon" type="image/png" href="../assets/images/kargacharge-logo.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/client-dashboard.css">
+    <link rel="stylesheet" href="../css/client-booking.css">
+</head>
+<body>
+    <div class="mobile-container">
+        <!-- Booking Content -->
+        <div class="booking-container" id="bookingContainer">
+            <!-- Header -->
+            <div class="booking-header">
+                <button class="back-button" id="backButton">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+                    </svg>
+                </button>
+                <h1>Book Charging Station</h1>
+            </div>
+
+            <!-- Alert Container -->
+            <div id="alertContainer"></div>
+
+            <!-- Station Selection (shown if no station selected) -->
+            <div id="stationSelectionView">
+                <div class="form-section">
+                    <h3>Select a Station</h3>
+                    <div id="stationsList">
+                        <!-- Stations will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Form (shown when station is selected) -->
+            <div id="bookingFormView" style="display: none;">
+                <!-- Selected Station Info -->
+                <div id="selectedStationInfo"></div>
+
+                <!-- Booking Form -->
+                <div class="booking-form">
+                    <form id="bookingForm">
+                        <div class="form-section">
+                            <h3>Select Date & Time</h3>
+                            
+                            <div class="form-group">
+                                <label for="bookingDate">Date</label>
+                                <input type="date" class="form-control" id="bookingDate" required>
+                            </div>
+
+                            <div class="time-inputs">
+                                <div class="form-group">
+                                    <label for="startTime">Start Time</label>
+                                    <input type="time" class="form-control" id="startTime" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="endTime">End Time</label>
+                                    <input type="time" id="endTime" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Summary -->
+                        <div class="summary-box">
+                            <div class="summary-row">
+                                <span>Duration:</span>
+                                <span class="value" id="durationDisplay">0 hours</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Rate per kWh:</span>
+                                <span class="value" id="rateDisplay">₱0.00</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Est. Energy (avg):</span>
+                                <span class="value" id="energyDisplay">0 kWh</span>
+                            </div>
+                            <div class="summary-row total">
+                                <span>Estimated Total:</span>
+                                <span class="value" id="totalDisplay">₱0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="booking-actions">
+                            <button type="button" class="btn-cancel" id="cancelBooking">Cancel</button>
+                            <button type="submit" class="btn-book" id="submitBooking">
+                                <span id="bookingButtonText">Confirm Booking</span>
+                                <span id="bookingButtonSpinner" style="display: none;">
+                                    <span class="loading-spinner"></span>
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Nav -->
+        <nav class="bottom-nav">
+            <div class="nav-item" data-tab="mapTab" id="navMap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
+                </svg>
+                <span>Map</span>
+            </div>
+            <div class="nav-item active" data-tab="bookingTab" id="navBooking">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                <span>Booking</span>
+            </div>
+            <div class="nav-item" data-tab="accountTab" id="navAccount">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+                    <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+                </svg>
+                <span>Account</span>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="success-modal" id="successModal">
+        <div class="success-content">
+            <div class="success-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                </svg>
+            </div>
+            <h2>Booked Successfully</h2>
+            <p>Please wait while the system accepts your booking request. You will receive an email confirmation once it's approved.</p>
+            <div class="success-actions">
+                <button class="btn-direction" id="getDirectionBtn">Get Direction</button>
+                <button class="btn-close" id="closeSuccessModal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/client-booking.js"></script>
+</body>
+</html>

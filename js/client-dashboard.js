@@ -740,12 +740,58 @@ function getUserLocation() {
 window.bookStation = function(stationId, stationName) {
     console.log('Booking station:', stationId, stationName);
     
-    const confirmed = confirm(`Would you like to book "${stationName}"?\n\nBooking functionality will be available soon!`);
-    
-    if (confirmed) {
-        alert(`Station ID ${stationId} selected for booking.\n\nBooking feature coming soon!`);
-    }
+    // Redirect to booking page with station ID
+    window.location.href = `client-booking.html?station_id=${stationId}`;
 };
+
+// Add this navigation handling for the booking tab
+// Find the section where tab switching happens and update it:
+
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', function(e) {
+        e.preventDefault();
+        const tabId = this.getAttribute('data-tab');
+        
+        if (tabId === 'bookingTab') {
+            // Navigate to booking page
+            window.location.href = 'client-booking.html';
+        } else if (tabId) {
+            switchTab(tabId);
+        }
+    });
+});
+
+// Add this to handle navigation from booking page
+window.addEventListener('DOMContentLoaded', function() {
+    // Check if we need to navigate to a specific location
+    const urlParams = new URLSearchParams(window.location.search);
+    const navigate = urlParams.get('navigate');
+    
+    if (navigate && map) {
+        const [lat, lng] = navigate.split(',').map(Number);
+        
+        // Center map on location
+        map.setView([lat, lng], 16);
+        
+        // Add a highlight marker
+        const highlightIcon = L.divIcon({
+            className: 'highlight-marker',
+            html: `<div style="background-color: #079FDB; width: 40px; height: 40px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 12px rgba(7, 159, 219, 0.5); animation: pulse 2s infinite;"></div>`,
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
+        });
+        
+        const highlightMarker = L.marker([lat, lng], { icon: highlightIcon })
+            .addTo(map)
+            .bindPopup('<div style="text-align: center; font-weight: 600;"><span style="color: #079FDB;">📍</span> Your destination</div>')
+            .openPopup();
+        
+        // Remove highlight after 5 seconds
+        setTimeout(() => {
+            map.removeLayer(highlightMarker);
+        }, 5000);
+    }
+});
 
 // Load user information in Account Tab
 function loadAccountInfo() {

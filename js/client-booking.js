@@ -1,0 +1,393 @@
+// Global variables
+let selectedStation = null;
+let allStations = [];
+let currentUserId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Booking page loaded');
+
+    // Check if user is logged in
+    const userName = sessionStorage.getItem('user_name');
+    currentUserId = sessionStorage.getItem('user_id');
+
+    if (!userName || !currentUserId) {
+        alert('Please log in first');
+        window.location.href = 'client-login.html';
+        return;
+    }
+
+    // Check if a station was passed from the map
+    const urlParams = new URLSearchParams(window.location.search);
+    const stationId = urlParams.get('station_id');
+
+    // Initialize page
+    if (stationId) {
+        loadStationById(stationId);
+    } else {
+        loadAvailableStations();
+    }
+
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('bookingDate').min = today;
+    document.getElementById('bookingDate').value = today;
+
+    // Event Listeners
+    document.getElementById('backButton').addEventListener('click', handleBack);
+    document.getElementById('cancelBooking').addEventListener('click', handleCancel);
+    document.getElementById('bookingForm').addEventListener('submit', handleBookingSubmit);
+    document.getElementById('startTime').addEventListener('change', calculateTotal);
+    document.getElementById('endTime').addEventListener('change', calculateTotal);
+    document.getElementById('getDirectionBtn').addEventListener('click', handleGetDirection);
+    document.getElementById('closeSuccessModal').addEventListener('click', closeSuccessModal);
+
+    // Bottom Navigation
+    document.getElementById('navMap').addEventListener('click', () => {
+        window.location.href = 'client-dashboard.html';
+    });
+    document.getElementById('navAccount').addEventListener('click', () => {
+        window.location.href = 'client-dashboard.html#account';
+    });
+});
+
+// Load all available stations
+function loadAvailableStations() {
+    console.log('Loading available stations...');
+    
+    fetch('../php/get-all-stations.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.stations) {
+                allStations = data.stations;
+                // Filter only available stations
+                const availableStations = data.stations.filter(s => s.availability_status === 'Available');
+                displayStations(availableStations);
+            } else {
+                showError('Failed to load stations: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error loading stations:', error);
+            showError('Error loading charging stations. Please try again.');
+        });
+}
+
+// Load specific station by ID
+function loadStationById(stationId) {
+    fetch('../php/get-all-stations.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.stations) {
+                allStations = data.stations;
+                const station = data.stations.find(s => s.stat_id == stationId);
+                if (station) {
+                    selectStation(station);
+                } else {
+                    showError('Station not found');
+                    loadAvailableStations();
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading station:', error);
+            showError('Error loading station details');
+            loadAvailableStations();
+        });
+}
+
+// Display stations list
+function displayStations(stations) {
+    const stationsList = document.getElementById('stationsList');
+    
+    if (stations.length === 0) {
+        stationsList.innerHTML = `
+            <div class="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
+                </svg>
+                <h3>No Available Stations</h3>
+                <p>All stations are currently occupied or under maintenance.</p>
+            </div>
+        `;
+        return;
+    }
+
+    stationsList.innerHTML = stations.map(station => {
+        const imageUrl = station.images && station.images.length > 0 
+            ? `data:image/jpeg;base64,${station.images[0]}`
+            : '../assets/images/placeholder-station.jpg';
+
+        return `
+            <div class="station-card" data-station-id="${station.stat_id}">
+                <img src="${imageUrl}" alt="${station.stat_name}" class="station-image" 
+                     onerror="this.src='../assets/images/placeholder-station.jpg'">
+                <div class="station-info">
+                    <h3>${station.stat_name}</h3>
+                    <div class="station-details">
+                        <div class="detail-row">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8.5 8.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 12z"/>
+                                <path d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6.093 6.093 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1"/>
+                            </svg>
+                            <span>${station.charge_type}</span>
+                        </div>
+                        <div class="detail-row">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09z"/>
+                            </svg>
+                            <span>₱${station.rate.toFixed(2)}/kWh</span>
+                        </div>
+                        <div class="detail-row">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
+                            </svg>
+                            <span>${station.place_type}</span>
+                        </div>
+                    </div>
+                    <span class="status-badge status-${station.availability_status.toLowerCase()}">
+                        ${station.availability_status}
+                    </span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Add click handlers to station cards
+    document.querySelectorAll('.station-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const stationId = this.dataset.stationId;
+            const station = stations.find(s => s.stat_id == stationId);
+            if (station) {
+                selectStation(station);
+            }
+        });
+    });
+}
+
+// Select a station and show booking form
+function selectStation(station) {
+    selectedStation = station;
+    console.log('Station selected:', station);
+
+    // Hide station selection, show booking form
+    document.getElementById('stationSelectionView').style.display = 'none';
+    document.getElementById('bookingFormView').style.display = 'block';
+
+    // Display selected station info
+    const imageUrl = station.images && station.images.length > 0 
+        ? `data:image/jpeg;base64,${station.images[0]}`
+        : '../assets/images/placeholder-station.jpg';
+
+    document.getElementById('selectedStationInfo').innerHTML = `
+        <div class="station-card selected">
+            <img src="${imageUrl}" alt="${station.stat_name}" class="station-image"
+                 onerror="this.src='../assets/images/placeholder-station.jpg'">
+            <div class="station-info">
+                <h3>${station.stat_name}</h3>
+                <div class="station-details">
+                    <div class="detail-row">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8.5 8.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 12z"/>
+                            <path d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6.093 6.093 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1"/>
+                        </svg>
+                        <span>${station.charge_type}</span>
+                    </div>
+                    <div class="detail-row">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09z"/>
+                        </svg>
+                        <span>₱${station.rate.toFixed(2)}/kWh</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Update rate display
+    document.getElementById('rateDisplay').textContent = `₱${station.rate.toFixed(2)}`;
+    
+    // Scroll to top
+    window.scrollTo(0, 0);
+}
+
+// Calculate booking total
+function calculateTotal() {
+    if (!selectedStation) return;
+
+    const startTime = document.getElementById('startTime').value;
+    const endTime = document.getElementById('endTime').value;
+
+    if (!startTime || !endTime) return;
+
+    // Calculate duration in hours
+    const start = new Date(`2000-01-01T${startTime}`);
+    const end = new Date(`2000-01-01T${endTime}`);
+    
+    if (end <= start) {
+        showError('End time must be after start time');
+        document.getElementById('durationDisplay').textContent = '0 hours';
+        document.getElementById('energyDisplay').textContent = '0 kWh';
+        document.getElementById('totalDisplay').textContent = '₱0.00';
+        return;
+    }
+
+    const durationMs = end - start;
+    const durationHours = durationMs / (1000 * 60 * 60);
+
+    // Estimate energy consumption (average EV charges at ~7 kW)
+    const estimatedEnergy = durationHours * 7;
+
+    // Calculate cost
+    const totalCost = estimatedEnergy * selectedStation.rate;
+
+    // Update display
+    document.getElementById('durationDisplay').textContent = `${durationHours.toFixed(1)} hours`;
+    document.getElementById('energyDisplay').textContent = `${estimatedEnergy.toFixed(1)} kWh`;
+    document.getElementById('totalDisplay').textContent = `₱${totalCost.toFixed(2)}`;
+}
+
+// Handle booking submission
+function handleBookingSubmit(e) {
+    e.preventDefault();
+
+    if (!selectedStation) {
+        showError('Please select a station');
+        return;
+    }
+
+    const bookingDate = document.getElementById('bookingDate').value;
+    const startTime = document.getElementById('startTime').value;
+    const endTime = document.getElementById('endTime').value;
+
+    if (!bookingDate || !startTime || !endTime) {
+        showError('Please fill in all fields');
+        return;
+    }
+
+    // Combine date and time
+    const startDateTime = `${bookingDate} ${startTime}:00`;
+    const endDateTime = `${bookingDate} ${endTime}:00`;
+
+    // Show loading state
+    const submitBtn = document.getElementById('submitBooking');
+    const btnText = document.getElementById('bookingButtonText');
+    const btnSpinner = document.getElementById('bookingButtonSpinner');
+    
+    submitBtn.disabled = true;
+    btnText.style.display = 'none';
+    btnSpinner.style.display = 'inline-block';
+
+    // Submit booking
+    const formData = new FormData();
+    formData.append('action', 'book_session');
+    formData.append('client_id', currentUserId);
+    formData.append('station_id', selectedStation.stat_id);
+    formData.append('start_time', startDateTime);
+    formData.append('end_time', endDateTime);
+
+    fetch('../php/client-booking.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        submitBtn.disabled = false;
+        btnText.style.display = 'inline';
+        btnSpinner.style.display = 'none';
+
+        if (data.success) {
+            showSuccessModal();
+        } else {
+            showError(data.message || 'Failed to create booking');
+        }
+    })
+    .catch(error => {
+        console.error('Booking error:', error);
+        submitBtn.disabled = false;
+        btnText.style.display = 'inline';
+        btnSpinner.style.display = 'none';
+        showError('An error occurred while creating the booking. Please try again.');
+    });
+}
+
+// Show success modal
+function showSuccessModal() {
+    document.getElementById('successModal').classList.add('active');
+}
+
+// Close success modal
+function closeSuccessModal() {
+    document.getElementById('successModal').classList.remove('active');
+    window.location.href = 'client-dashboard.html';
+}
+
+// Handle get direction
+function handleGetDirection() {
+    if (selectedStation && selectedStation.latitude && selectedStation.longitude) {
+        // Redirect to dashboard map with navigation
+        window.location.href = `client-dashboard.html?navigate=${selectedStation.latitude},${selectedStation.longitude}`;
+    } else {
+        closeSuccessModal();
+    }
+}
+
+// Handle back button
+function handleBack() {
+    if (document.getElementById('bookingFormView').style.display === 'block') {
+        // Go back to station selection
+        document.getElementById('bookingFormView').style.display = 'none';
+        document.getElementById('stationSelectionView').style.display = 'block';
+        selectedStation = null;
+    } else {
+        // Go back to dashboard
+        window.location.href = 'client-dashboard.html';
+    }
+}
+
+// Handle cancel button
+function handleCancel() {
+    if (confirm('Are you sure you want to cancel?')) {
+        handleBack();
+    }
+}
+
+// Show error message
+function showError(message) {
+    const alertContainer = document.getElementById('alertContainer');
+    alertContainer.innerHTML = `
+        <div class="alert alert-danger">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+            </svg>
+            ${message}
+        </div>
+    `;
+    
+    window.scrollTo(0, 0);
+    
+    setTimeout(() => {
+        alertContainer.innerHTML = '';
+    }, 5000);
+}
+
+// Show info message
+function showInfo(message) {
+    const alertContainer = document.getElementById('alertContainer');
+    alertContainer.innerHTML = `
+        <div class="alert alert-info">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533z"/>
+                <circle cx="8" cy="4.5" r="1"/>
+            </svg>
+            ${message}
+        </div>
+    `;
+    
+    window.scrollTo(0, 0);
+    
+    setTimeout(() => {
+        alertContainer.innerHTML = '';
+    }, 5000);
+}

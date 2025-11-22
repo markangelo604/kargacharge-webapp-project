@@ -35,22 +35,57 @@
             return;
         }
 
+        // Convert datetime strings to timestamps
+        $start_timestamp = strtotime($start_time);
+        $end_timestamp = strtotime($end_time);
+        
+        // Extract date from start_time
+        $booking_date = date('Y-m-d', $start_timestamp);
+
         // Validate that start_time < end_time
-        if (strtotime($start_time) >= strtotime($end_time)) {
+        if ($start_timestamp >= $end_timestamp) {
             echo json_encode(['success' => false, 'message' => 'Start time must be earlier than end time']);
+            return;
+        }
+
+        // Get station rate
+        $rate_query = $conn->prepare("SELECT rate, availability_status FROM charging_station WHERE stat_id = ?");
+        $rate_query->bind_param("i", $station_id);
+        $rate_query->execute();
+        $rate_result = $rate_query->get_result();
+        
+        if ($rate_result->num_rows === 0) {
+            echo json_encode(['success' => false, 'message' => 'Station not found']);
+            return;
+        }
+        
+        $station_data = $rate_result->fetch_assoc();
+        $rate = $station_data['rate'];
+        $availability = $station_data['availability_status'];
+        
+        $rate_query->close();
+
+        // Check if station is available
+        if ($availability !== 'Available') {
+            echo json_encode(['success' => false, 'message' => 'This station is not currently available']);
             return;
         }
 
         // Check for overlapping bookings
         $check = $conn->prepare("
-            SELECT id FROM bookings
-            WHERE station_id = ?
-            AND (
-                (? < end_time) AND (? > start_time)
-            )
+            SELECT book_id FROM booking
+            WHERE stat_id = ?
+            AND date = ?
+            AND status != 'Cancelled'
+            AND NOT (time_out <= ? OR time_in >= ?)
             LIMIT 1
         ");
-        $check->bind_param("iss", $station_id, $end_time, $start_time);
+        $check->bind_param("isii", 
+            $station_id,      
+            $booking_date,    
+            $start_timestamp, 
+            $end_timestamp    
+        );
         $check->execute();
         $result = $check->get_result();
 
@@ -60,14 +95,20 @@
         }
         $check->close();
 
-        // Insert booking
-        $stmt = $conn->prepare("INSERT INTO bookings (client_id, station_id, start_time, end_time) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("iiss", $client_id, $station_id, $start_time, $end_time);
+        // Insert booking with status 'Pending'
+        $stmt = $conn->prepare("INSERT INTO booking (evown_id, stat_id, time_in, time_out, date, rate, status) VALUES (?, ?, ?, ?, ?, ?, 'Pending')");
+        $stmt->bind_param("iiiiss", $client_id, $station_id, $start_timestamp, $end_timestamp, $booking_date, $rate);
 
         if ($stmt->execute()) {
-            echo json_encode(['success' => true, 'message' => 'Charging session booked successfully']);
+            $booking_id = $stmt->insert_id;
+             
+            echo json_encode([
+                'success' => true, 
+                'message' => 'Charging session booked successfully',
+                'booking_id' => $booking_id
+            ]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to book charging session']);
+            echo json_encode(['success' => false, 'message' => 'Failed to book charging session: ' . $stmt->error]);
         }
 
         $stmt->close();
@@ -76,19 +117,38 @@
     function bookingPayment($conn) {
         $booking_id = $_POST['booking_id'] ?? '';
         $amount = $_POST['amount'] ?? '';
+        $payment_method = $_POST['payment_method'] ?? 'Cash';
 
         if (empty($booking_id) || empty($amount)) {
             echo json_encode(['success' => false, 'message' => 'Booking ID and amount are required']);
             return;
         }
 
-        // Here you would integrate with a payment gateway
-        // For simplicity, we will just mark the booking as paid
+        // Check if booking exists
+        $check = $conn->prepare("SELECT book_id, status FROM booking WHERE book_id = ?");
+        $check->bind_param("i", $booking_id);
+        $check->execute();
+        $result = $check->get_result();
+        
+        if ($result->num_rows === 0) {
+            echo json_encode(['success' => false, 'message' => 'Booking not found']);
+            return;
+        }
+        
+        $booking = $result->fetch_assoc();
+        $check->close();
 
-        $stmt = $conn->prepare("UPDATE bookings SET is_paid = 1, amount_paid = ? WHERE id = ?");
-        $stmt->bind_param("di", $amount, $booking_id);
+        // Insert payment record
+        $stmt = $conn->prepare("INSERT INTO payment (book_id, total_amount, payment_method, payment_status) VALUES (?, ?, ?, 'Completed')");
+        $stmt->bind_param("ids", $booking_id, $amount, $payment_method);
 
         if ($stmt->execute()) {
+            // Update booking status to 'Confirmed'
+            $update = $conn->prepare("UPDATE booking SET status = 'Confirmed' WHERE book_id = ?");
+            $update->bind_param("i", $booking_id);
+            $update->execute();
+            $update->close();
+            
             echo json_encode(['success' => true, 'message' => 'Payment successful for the booking']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to process payment']);
@@ -107,24 +167,54 @@
             return;
         }
 
+        // Convert to timestamps
+        $new_start_timestamp = strtotime($new_start_time);
+        $new_end_timestamp = strtotime($new_end_time);
+        $new_date = date('Y-m-d', $new_start_timestamp);
+
         // Validate that new_start_time < new_end_time
-        if (strtotime($new_start_time) >= strtotime($new_end_time)) {
+        if ($new_start_timestamp >= $new_end_timestamp) {
             echo json_encode(['success' => false, 'message' => 'Start time must be earlier than end time']);
             return;
         }
 
-        // Check for overlapping bookings
+        // Get booking station and current details
+        $get_booking = $conn->prepare("SELECT stat_id FROM booking WHERE book_id = ?");
+        $get_booking->bind_param("i", $booking_id);
+        $get_booking->execute();
+        $booking_result = $get_booking->get_result();
+        
+        if ($booking_result->num_rows === 0) {
+            echo json_encode(['success' => false, 'message' => 'Booking not found']);
+            return;
+        }
+        
+        $booking_data = $booking_result->fetch_assoc();
+        $station_id = $booking_data['stat_id'];
+        $get_booking->close();
+
+        // Check for overlapping bookings (excluding current booking)
         $check = $conn->prepare("
-            SELECT id FROM bookings
-            WHERE id != ? AND station_id = (
-                SELECT station_id FROM bookings WHERE id = ?
-            )
+            SELECT book_id FROM booking
+            WHERE book_id != ?
+            AND stat_id = ?
+            AND date = ?
+            AND status != 'Cancelled'
             AND (
-                (? < end_time) AND (? > start_time)
+                (? < time_out AND ? > time_in) OR
+                (? < time_out AND ? > time_in) OR
+                (? <= time_in AND ? >= time_out)
             )
             LIMIT 1
         ");
-        $check->bind_param("iiss", $booking_id, $booking_id, $new_end_time, $new_start_time);
+        $check->bind_param("iisiiiiiii", 
+            $booking_id,
+            $station_id,
+            $new_date,
+            $new_start_timestamp, $new_start_timestamp,
+            $new_end_timestamp, $new_end_timestamp,
+            $new_start_timestamp, $new_end_timestamp
+        );
         $check->execute();
         $result = $check->get_result();
 
@@ -135,8 +225,8 @@
         $check->close();
 
         // Update booking times
-        $stmt = $conn->prepare("UPDATE bookings SET start_time = ?, end_time = ? WHERE id = ?");
-        $stmt->bind_param("ssi", $new_start_time, $new_end_time, $booking_id);
+        $stmt = $conn->prepare("UPDATE booking SET time_in = ?, time_out = ?, date = ? WHERE book_id = ?");
+        $stmt->bind_param("iisi", $new_start_timestamp, $new_end_timestamp, $new_date, $booking_id);
 
         if ($stmt->execute()) {
             echo json_encode(['success' => true, 'message' => 'Booking time updated successfully']);
@@ -155,16 +245,20 @@
             return;
         }
 
-        $stmt = $conn->prepare("DELETE FROM bookings WHERE id = ?");
+        // Update booking status instead of deleting
+        $stmt = $conn->prepare("UPDATE booking SET status = 'Cancelled' WHERE book_id = ?");
         $stmt->bind_param("i", $booking_id);
 
         if ($stmt->execute()) {
-            echo json_encode(['success' => true, 'message' => 'Booking cancelled successfully']);
+            if ($stmt->affected_rows > 0) {
+                echo json_encode(['success' => true, 'message' => 'Booking cancelled successfully']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Booking not found']);
+            }
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to cancel booking']);
         }
 
         $stmt->close();
     }
-
 ?>
