@@ -8,6 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../css/client-dashboard.css">
     <link rel="stylesheet" href="../css/client-booking.css">
+    <link rel="stylesheet" href="../css/client-payment.css">
 </head>
 <body>
     <div class="mobile-container">
@@ -125,6 +126,201 @@
         </nav>
     </div>
 
+
+    <!-- Payment Modal -->
+    <div class="payment-modal" id="paymentModal">
+        <div class="payment-modal-content">
+            <!-- Step 1: Review and Continue -->
+            <div class="payment-step" id="paymentStep1">
+                <div class="payment-header">
+                    <button class="close-btn" id="closePaymentModal">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+                        </svg>
+                    </button>
+                    <h2>Review and continue</h2>
+                </div>
+
+                <div class="payment-body">
+                    <!-- Station Info -->
+                    <div class="payment-station-info" id="paymentStationInfo">
+                        <!-- Will be populated dynamically -->
+                    </div>
+
+                    <!-- Booking Details -->
+                    <div class="payment-detail-row">
+                        <span class="label">Booking Date</span>
+                        <div class="value-with-change">
+                            <span class="value" id="paymentBookingDate"></span>
+                            <button class="change-btn" id="changeDateBtn">Change</button>
+                        </div>
+                    </div>
+
+                    <div class="payment-detail-row">
+                        <span class="label">Capacity</span>
+                        <span class="value" id="paymentCapacity">2 Vehicles</span>
+                    </div>
+
+                    <div class="payment-detail-row">
+                        <span class="label">Type of Current</span>
+                        <div class="value-with-change">
+                            <span class="value" id="paymentCurrentType"></span>
+                            <button class="change-btn" id="changeCurrentBtn">Change</button>
+                        </div>
+                    </div>
+
+                    <div class="payment-detail-row">
+                        <span class="label">Total Rate</span>
+                        <span class="value" id="paymentTotalRate"></span>
+                    </div>
+
+                    <div class="payment-policy">
+                        This booking is non-refundable. <a href="#" class="policy-link">Full policy.</a>
+                    </div>
+                </div>
+
+                <div class="payment-footer">
+                    <button class="btn-next" id="goToPaymentMethodBtn">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Payment Method Selection -->
+            <div class="payment-step" id="paymentStep2" style="display: none;">
+                <div class="payment-header">
+                    <button class="back-btn" id="backToReviewBtn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+                        </svg>
+                    </button>
+                    <button class="close-btn" id="closePaymentModal2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+                        </svg>
+                    </button>
+                    <h2>Add a payment method</h2>
+                </div>
+
+                <div class="payment-body">
+                    <div class="payment-methods">
+                        <div class="payment-method-option" data-method="card">
+                            <div class="method-info">
+                                <div class="method-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1z"/>
+                                    </svg>
+                                </div>
+                                <div class="method-details">
+                                    <span class="method-name">Credit or debit card</span>
+                                    <div class="card-logos">
+                                        <span class="card-logo visa">VISA</span>
+                                        <span class="card-logo mastercard">MC</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="radio" name="paymentMethod" value="card">
+                        </div>
+
+                        <div class="payment-method-option selected" data-method="gcash">
+                            <div class="method-info">
+                                <div class="method-icon gcash-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                        <circle cx="12" cy="12" r="10" fill="#007DFF"/>
+                                        <text x="12" y="16" text-anchor="middle" fill="white" font-weight="bold" font-size="10">G</text>
+                                    </svg>
+                                </div>
+                                <span class="method-name">GCash</span>
+                            </div>
+                            <input type="radio" name="paymentMethod" value="gcash" checked>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="payment-footer">
+                    <button class="btn-next" id="goToConfirmBtn">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Final Confirmation -->
+            <div class="payment-step" id="paymentStep3" style="display: none;">
+                <div class="payment-header">
+                    <button class="back-btn" id="backToPaymentMethodBtn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+                        </svg>
+                    </button>
+                    <button class="close-btn" id="closePaymentModal3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+                        </svg>
+                    </button>
+                    <h2>Review and continue</h2>
+                </div>
+
+                <div class="payment-body">
+                    <!-- Station Info -->
+                    <div class="payment-station-info" id="paymentStationInfo2">
+                        <!-- Will be populated dynamically -->
+                    </div>
+
+                    <!-- Booking Details -->
+                    <div class="payment-detail-row">
+                        <span class="label">Booking Date</span>
+                        <div class="value-with-change">
+                            <span class="value" id="paymentBookingDate2"></span>
+                            <button class="change-btn" id="changeDateBtn2">Change</button>
+                        </div>
+                    </div>
+
+                    <div class="payment-detail-row">
+                        <span class="label">Capacity</span>
+                        <span class="value" id="paymentCapacity2">2 Vehicles</span>
+                    </div>
+
+                    <div class="payment-detail-row">
+                        <span class="label">Total Rate</span>
+                        <span class="value" id="paymentTotalRate2"></span>
+                    </div>
+
+                    <div class="payment-policy">
+                        This booking is non-refundable. <a href="#" class="policy-link">Full policy.</a>
+                    </div>
+
+                    <!-- Payment Method Display -->
+                    <div class="payment-detail-row payment-method-display">
+                        <span class="label">Payment method</span>
+                        <div class="value-with-change">
+                            <div class="selected-payment-method">
+                                <div class="method-icon gcash-icon small">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <circle cx="12" cy="12" r="10" fill="#007DFF"/>
+                                        <text x="12" y="16" text-anchor="middle" fill="white" font-weight="bold" font-size="10">G</text>
+                                    </svg>
+                                </div>
+                                <span id="selectedPaymentMethodName">GCash</span>
+                            </div>
+                            <button class="change-arrow-btn" id="changePaymentMethodBtn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="payment-footer">
+                    <div class="terms-agreement">
+                        By selecting the button, I agree to the <a href="#" class="terms-link">booking terms</a>.
+                    </div>
+                    <button class="btn-confirm" id="confirmAndPayBtn">
+                        <span id="confirmButtonText">Confirm and Pay</span>
+                        <span id="confirmButtonSpinner" style="display: none;">
+                            <span class="loading-spinner"></span>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Success Modal -->
     <div class="success-modal" id="successModal">
         <div class="success-content">

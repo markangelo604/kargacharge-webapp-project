@@ -264,51 +264,10 @@ function handleBookingSubmit(e) {
         return;
     }
 
-    // Combine date and time
-    const startDateTime = `${bookingDate} ${startTime}:00`;
-    const endDateTime = `${bookingDate} ${endTime}:00`;
-
-    // Show loading state
-    const submitBtn = document.getElementById('submitBooking');
-    const btnText = document.getElementById('bookingButtonText');
-    const btnSpinner = document.getElementById('bookingButtonSpinner');
-    
-    submitBtn.disabled = true;
-    btnText.style.display = 'none';
-    btnSpinner.style.display = 'inline-block';
-
-    // Submit booking
-    const formData = new FormData();
-    formData.append('action', 'book_session');
-    formData.append('client_id', currentUserId);
-    formData.append('station_id', selectedStation.stat_id);
-    formData.append('start_time', startDateTime);
-    formData.append('end_time', endDateTime);
-
-    fetch('../php/client-booking.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        submitBtn.disabled = false;
-        btnText.style.display = 'inline';
-        btnSpinner.style.display = 'none';
-
-        if (data.success) {
-            showSuccessModal();
-        } else {
-            showError(data.message || 'Failed to create booking');
-        }
-    })
-    .catch(error => {
-        console.error('Booking error:', error);
-        submitBtn.disabled = false;
-        btnText.style.display = 'inline';
-        btnSpinner.style.display = 'none';
-        showError('An error occurred while creating the booking. Please try again.');
-    });
+    // Show payment modal instead of submitting immediately
+    showPaymentModal();
 }
+
 
 // Show success modal
 function showSuccessModal() {
@@ -390,4 +349,175 @@ function showInfo(message) {
     setTimeout(() => {
         alertContainer.innerHTML = '';
     }, 5000);
+}
+// ============================================
+// PAYMENT MODAL FUNCTIONS
+// ============================================
+
+let selectedPaymentMethod = 'gcash';
+
+// Show payment modal with booking details
+function showPaymentModal() {
+    const modal = document.getElementById('paymentModal');
+    modal.classList.add('active');
+    
+    // Populate payment modal with booking details
+    populatePaymentDetails();
+    
+    // Show step 1
+    showPaymentStep(1);
+    
+    // Add event listeners for payment modal
+    initializePaymentModalListeners();
+}
+
+// Populate payment modal with booking data
+function populatePaymentDetails() {
+    if (!selectedStation) return;
+    
+    const bookingDate = document.getElementById('bookingDate').value;
+    const startTime = document.getElementById('startTime').value;
+    const endTime = document.getElementById('endTime').value;
+    const totalCost = document.getElementById('totalDisplay').textContent;
+    
+    // Format booking date and time
+    const dateObj = new Date(bookingDate);
+    const formattedDate = dateObj.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+    }) + ': ' + startTime + ' - ' + endTime;
+    
+    // Get station image
+    const imageUrl = selectedStation.images && selectedStation.images.length > 0 
+        ? `data:image/jpeg;base64,${selectedStation.images[0]}`
+        : '../assets/images/placeholder-station.jpg';
+    
+    // Populate station info for all steps
+    const stationInfoHTML = `
+        <img src="${imageUrl}" alt="${selectedStation.stat_name}" 
+             onerror="this.src='../assets/images/placeholder-station.jpg'">
+        <div class="payment-station-details">
+            <h3>${selectedStation.stat_name}</h3>
+            <div class="payment-station-rating">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                </svg>
+                <span>4.8 (5)</span>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('paymentStationInfo').innerHTML = stationInfoHTML;
+    document.getElementById('paymentStationInfo2').innerHTML = stationInfoHTML;
+    
+    // Populate booking details for all steps
+    document.getElementById('paymentBookingDate').textContent = formattedDate;
+    document.getElementById('paymentBookingDate2').textContent = formattedDate;
+    document.getElementById('paymentCurrentType').textContent = selectedStation.charge_type + ' (AC)';
+    document.getElementById('paymentTotalRate').textContent = totalCost;
+    document.getElementById('paymentTotalRate2').textContent = totalCost;
+}
+
+// Initialize payment modal event listeners
+function initializePaymentModalListeners() {
+    // Close buttons
+    document.getElementById('closePaymentModal').onclick = closePaymentModal;
+    document.getElementById('closePaymentModal2').onclick = closePaymentModal;
+    document.getElementById('closePaymentModal3').onclick = closePaymentModal;
+    
+    // Navigation buttons
+    document.getElementById('goToPaymentMethodBtn').onclick = () => showPaymentStep(2);
+    document.getElementById('backToReviewBtn').onclick = () => showPaymentStep(1);
+    document.getElementById('goToConfirmBtn').onclick = () => showPaymentStep(3);
+    document.getElementById('backToPaymentMethodBtn').onclick = () => showPaymentStep(2);
+    document.getElementById('changePaymentMethodBtn').onclick = () => showPaymentStep(2);
+    
+    // Change buttons (go back to booking form)
+    document.getElementById('changeDateBtn').onclick = closePaymentModal;
+    document.getElementById('changeCurrentBtn').onclick = closePaymentModal;
+    document.getElementById('changeDateBtn2').onclick = closePaymentModal;
+    
+    // Payment method selection
+    document.querySelectorAll('.payment-method-option').forEach(option => {
+        option.onclick = function() {
+            document.querySelectorAll('.payment-method-option').forEach(opt => {
+                opt.classList.remove('selected');
+                opt.querySelector('input[type="radio"]').checked = false;
+            });
+            this.classList.add('selected');
+            this.querySelector('input[type="radio"]').checked = true;
+            selectedPaymentMethod = this.dataset.method;
+        };
+    });
+    
+    // Confirm and pay button
+    document.getElementById('confirmAndPayBtn').onclick = handleConfirmAndPay;
+}
+
+// Show specific payment step
+function showPaymentStep(step) {
+    document.getElementById('paymentStep1').style.display = step === 1 ? 'block' : 'none';
+    document.getElementById('paymentStep2').style.display = step === 2 ? 'block' : 'none';
+    document.getElementById('paymentStep3').style.display = step === 3 ? 'block' : 'none';
+}
+
+// Close payment modal
+function closePaymentModal() {
+    const modal = document.getElementById('paymentModal');
+    modal.classList.remove('active');
+}
+
+// Handle confirm and pay
+function handleConfirmAndPay() {
+    const bookingDate = document.getElementById('bookingDate').value;
+    const startTime = document.getElementById('startTime').value;
+    const endTime = document.getElementById('endTime').value;
+    
+    // Combine date and time
+    const startDateTime = `${bookingDate} ${startTime}:00`;
+    const endDateTime = `${bookingDate} ${endTime}:00`;
+
+    // Show loading state
+    const confirmBtn = document.getElementById('confirmAndPayBtn');
+    const btnText = document.getElementById('confirmButtonText');
+    const btnSpinner = document.getElementById('confirmButtonSpinner');
+    
+    confirmBtn.disabled = true;
+    btnText.style.display = 'none';
+    btnSpinner.style.display = 'inline-block';
+
+    // Submit booking
+    const formData = new FormData();
+    formData.append('action', 'book_session');
+    formData.append('client_id', currentUserId);
+    formData.append('station_id', selectedStation.stat_id);
+    formData.append('start_time', startDateTime);
+    formData.append('end_time', endDateTime);
+    formData.append('payment_method', selectedPaymentMethod);
+
+    fetch('../php/client-booking.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        confirmBtn.disabled = false;
+        btnText.style.display = 'inline';
+        btnSpinner.style.display = 'none';
+
+        if (data.success) {
+            closePaymentModal();
+            showSuccessModal();
+        } else {
+            showError(data.message || 'Failed to create booking');
+        }
+    })
+    .catch(error => {
+        console.error('Booking error:', error);
+        confirmBtn.disabled = false;
+        btnText.style.display = 'inline';
+        btnSpinner.style.display = 'none';
+        showError('An error occurred while creating the booking. Please try again.');
+    });
 }
