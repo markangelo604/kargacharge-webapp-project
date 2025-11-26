@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function(){
     const bookingHistoryBtn = document.getElementById('bookingHistoryBtn');
     if (bookingHistoryBtn) {
         bookingHistoryBtn.addEventListener('click', function() {
-            alert('Booking History page coming soon!');
+            window.location.href = 'client-booking-history.html';
         });
     }
     
