@@ -329,6 +329,9 @@ function loadStationData(stationId) {
                 document.getElementById('availabilityStatus').value = station.availability_status;
                 document.getElementById('details').value = station.details || '';
                 
+                // Check for active bookings and disable dropdown if needed
+                checkStationBookingsAndDisableDropdown(station.stat_id);
+                
                 // Load existing images
                 currentExistingImages = station.images || [];
                 displayExistingImages(currentExistingImages);
@@ -839,5 +842,47 @@ function handleProviderLogout(){
         console.error('Logout error:', error);
         // Still redirect even if the request fails
         window.location.href = 'provider-login.html';
+    });
+}
+
+function checkStationBookingsAndDisableDropdown(stationId) {
+    if (!stationId) return;
+    
+    const formData = new FormData();
+    formData.append('action', 'check_station_bookings');
+    formData.append('station_id', stationId);
+    
+    fetch('../php/client-booking.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const availabilityDropdown = document.getElementById('availabilityStatus');
+            if (availabilityDropdown) {
+                if (data.has_bookings) {
+                    availabilityDropdown.disabled = true;
+                    // Add a message to inform the provider
+                    const warningDiv = document.getElementById('availabilityWarning');
+                    if (warningDiv) {
+                        warningDiv.innerHTML = `
+                            <div class="alert alert-warning mt-2">
+                                <small>Availability status cannot be changed while there are active bookings</small>
+                            </div>
+                        `;
+                    }
+                } else {
+                    availabilityDropdown.disabled = false;
+                    const warningDiv = document.getElementById('availabilityWarning');
+                    if (warningDiv) {
+                        warningDiv.innerHTML = '';
+                    }
+                }
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error checking station bookings:', error);
     });
 }

@@ -32,6 +32,18 @@ document.addEventListener('DOMContentLoaded', function(){
     document.title = `${userName} | KargaCharge`;
     console.log('User logged in:', userName);
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const navigate = urlParams.get('navigate');
+    
+    if (navigate) {
+        // Parse navigation coordinates
+        const [lat, lng] = navigate.split(',').map(Number);
+        if (!isNaN(lat) && !isNaN(lng)) {
+            // Store navigation target for use after map initialization
+            window.navigationTarget = { lat, lng };
+        }
+    }
+
     // Initialize map after a short delay to ensure DOM is ready
     setTimeout(() => {
         console.log('Initializing map...');
@@ -323,14 +335,51 @@ function initializeMap() {
         // Load charging stations
         loadChargingStations();
 
-        // Try to get user's location
-        getUserLocation();
+        // Handle navigation if needed
+        if (window.navigationTarget) {
+            // Focus on the navigation target instead of user location
+            focusOnNavigationTarget(window.navigationTarget);
+            // Clean up the navigation target so it doesn't trigger again
+            delete window.navigationTarget;
+        } else {
+            // Only get user location if we're not navigating to a specific location
+            getUserLocation();
+        }
 
         console.log('Map initialized successfully!');
     } catch (error) {
         console.error('Error initializing map:', error);
         alert('Failed to initialize map: ' + error.message);
     }
+}
+
+function focusOnNavigationTarget(target) {
+    const { lat, lng } = target;
+    
+    // Center map on location with zoom
+    map.setView([lat, lng], 16);
+    
+    // Add a highlight marker
+    const highlightIcon = L.divIcon({
+        className: 'highlight-marker',
+        html: `<div style="background-color: #079FDB; width: 40px; height: 40px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 12px rgba(7, 159, 219, 0.5); animation: pulse 2s infinite;"></div>`,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+    });
+    
+    const highlightMarker = L.marker([lat, lng], { icon: highlightIcon })
+        .addTo(map)
+        .bindPopup('<div style="text-align: center; font-weight: 600;"><span style="color: #079FDB;">📍</span> Your destination</div>')
+        .openPopup();
+    
+    // Remove highlight after 5 seconds
+    setTimeout(() => {
+        if (map && highlightMarker) {
+            map.removeLayer(highlightMarker);
+        }
+    }, 5000);
+    
+    console.log('Focused on navigation target:', lat, lng);
 }
 
 // Load all charging stations from database

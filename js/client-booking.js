@@ -81,6 +81,12 @@ function loadStationById(stationId) {
                 allStations = data.stations;
                 const station = data.stations.find(s => s.stat_id == stationId);
                 if (station) {
+                    // Parse location coordinates
+                    const coords = station.location.split(',').map(coord => parseFloat(coord.trim()));
+                    if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+                        station.latitude = coords[0];
+                        station.longitude = coords[1];
+                    }
                     selectStation(station);
                 } else {
                     showError('Station not found');
@@ -113,6 +119,13 @@ function displayStations(stations) {
     }
 
     stationsList.innerHTML = stations.map(station => {
+        // Parse location coordinates
+        const coords = station.location.split(',').map(coord => parseFloat(coord.trim()));
+        if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+            station.latitude = coords[0];
+            station.longitude = coords[1];
+        }
+
         const imageUrl = station.images && station.images.length > 0 
             ? `data:image/jpeg;base64,${station.images[0]}`
             : '../assets/images/placeholder-station.jpg';
@@ -168,6 +181,15 @@ function displayStations(stations) {
 function selectStation(station) {
     selectedStation = station;
     console.log('Station selected:', station);
+
+    // Parse location coordinates from the location string
+    if (station.location) {
+        const coords = station.location.split(',').map(coord => parseFloat(coord.trim()));
+        if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+            selectedStation.latitude = coords[0];
+            selectedStation.longitude = coords[1];
+        }
+    }
 
     // Hide station selection, show booking form
     document.getElementById('stationSelectionView').style.display = 'none';
@@ -264,8 +286,44 @@ function handleBookingSubmit(e) {
         return;
     }
 
-    // Show payment modal instead of submitting immediately
-    showPaymentModal();
+    // First check if user has any pending bookings
+    checkPendingBookings()
+        .then(hasPending => {
+            if (hasPending) {
+                showError('You already have a pending booking. Please wait for confirmation or cancel the existing booking.');
+            } else {
+                // No pending bookings, proceed to payment
+                showPaymentModal();
+            }
+        })
+        .catch(error => {
+            console.error('Error checking pending bookings:', error);
+            showError('Error checking booking status. Please try again.');
+        });
+}
+
+function checkPendingBookings() {
+    return new Promise((resolve, reject) => {
+        const formData = new FormData();
+        formData.append('action', 'check_pending_bookings');
+        formData.append('client_id', currentUserId);
+
+        fetch('../php/client-booking.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                resolve(data.has_pending);
+            } else {
+                reject(new Error(data.message || 'Failed to check booking status'));
+            }
+        })
+        .catch(error => {
+            reject(error);
+        });
+    });
 }
 
 
@@ -283,10 +341,32 @@ function closeSuccessModal() {
 // Handle get direction
 function handleGetDirection() {
     if (selectedStation && selectedStation.latitude && selectedStation.longitude) {
-        // Redirect to dashboard map with navigation
+        // Redirect to dashboard map with navigation parameters
         window.location.href = `client-dashboard.html?navigate=${selectedStation.latitude},${selectedStation.longitude}`;
     } else {
-        closeSuccessModal();
+        // If we don't have coordinates, try to get them from the server
+        fetch(`../php/get-station-details.php?stat_id=${selectedStation.stat_id}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.station) {
+                    // Parse location from string format "lat, lng"
+                    const locationParts = data.station.location.split(',');
+                    if (locationParts.length === 2) {
+                        const lat = parseFloat(locationParts[0].trim());
+                        const lng = parseFloat(locationParts[1].trim());
+                        if (!isNaN(lat) && !isNaN(lng)) {
+                            window.location.href = `client-dashboard.html?navigate=${lat},${lng}`;
+                            return;
+                        }
+                    }
+                }
+                // If we can't get location, just go to dashboard
+                closeSuccessModal();
+            })
+            .catch(error => {
+                console.error('Error fetching station details:', error);
+                closeSuccessModal();
+            });
     }
 }
 
@@ -487,37 +567,76 @@ function handleConfirmAndPay() {
     btnText.style.display = 'none';
     btnSpinner.style.display = 'inline-block';
 
-    // Submit booking
-    const formData = new FormData();
-    formData.append('action', 'book_session');
-    formData.append('client_id', currentUserId);
-    formData.append('station_id', selectedStation.stat_id);
-    formData.append('start_time', startDateTime);
-    formData.append('end_time', endDateTime);
-    formData.append('payment_method', selectedPaymentMethod);
+    // First, book the session
+    const bookingData = new FormData();
+    bookingData.append('action', 'book_session');
+    bookingData.append('client_id', currentUserId);
+    bookingData.append('station_id', selectedStation.stat_id);
+    bookingData.append('start_time', startDateTime);
+    bookingData.append('end_time', endDateTime);
 
     fetch('../php/client-booking.php', {
         method: 'POST',
-        body: formData
+        body: bookingData
     })
     .then(response => response.json())
     .then(data => {
+        if (data.success) {
+            // If booking is successful, process payment
+            return processPayment(data.booking_id);
+        } else {
+            throw new Error(data.message || 'Failed to create booking');
+        }
+    })
+    .then(paymentResult => {
+        // Reset button state
         confirmBtn.disabled = false;
         btnText.style.display = 'inline';
         btnSpinner.style.display = 'none';
 
-        if (data.success) {
+        if (paymentResult.success) {
             closePaymentModal();
             showSuccessModal();
         } else {
-            showError(data.message || 'Failed to create booking');
+            showError(paymentResult.message || 'Payment failed');
         }
     })
     .catch(error => {
-        console.error('Booking error:', error);
+        console.error('Booking/Payment error:', error);
         confirmBtn.disabled = false;
         btnText.style.display = 'inline';
         btnSpinner.style.display = 'none';
-        showError('An error occurred while creating the booking. Please try again.');
+        showError(error.message || 'An error occurred. Please try again.');
+    });
+}
+
+function processPayment(bookingId) {
+    return new Promise((resolve, reject) => {
+        // Get the total amount from the display
+        const totalDisplay = document.getElementById('totalDisplay').textContent;
+        const amount = parseFloat(totalDisplay.replace('₱', '').trim());
+        
+        if (isNaN(amount)) {
+            reject(new Error('Invalid amount'));
+            return;
+        }
+
+        const paymentData = new FormData();
+        paymentData.append('action', 'booking_payment');
+        paymentData.append('booking_id', bookingId);
+        paymentData.append('amount', amount);
+        paymentData.append('payment_method', selectedPaymentMethod);
+
+        fetch('../php/client-booking.php', {
+            method: 'POST',
+            body: paymentData
+        })
+        .then(response => response.json())
+        .then(data => {
+            resolve(data);
+        })
+        .catch(error => {
+            reject(error);
+        });
     });
 }

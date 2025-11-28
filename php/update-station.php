@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Validate required fields
-$required_fields = ['stat_id', 'stat_name', 'location', 'place_type', 'charge_type', 'rate', 'availability_status', 'prov_id'];
+$required_fields = ['stat_id', 'stat_name', 'location', 'place_type', 'charge_type', 'rate', 'prov_id'];
 $missing_fields = [];
 
 foreach ($required_fields as $field) {
@@ -57,6 +57,41 @@ if (!preg_match('/^-?\d+\.?\d*,\s*-?\d+\.?\d*$/', $location)) {
     ]);
     exit;
 }
+
+// Function to check if station has active bookings
+function hasActiveBookings($conn, $stat_id) {
+    $sql = "SELECT COUNT(*) as count FROM booking 
+            WHERE stat_id = ? AND status IN ('Pending', 'Confirmed')";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $stat_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    $stmt->close();
+    return $row['count'] > 0;
+}
+
+// Check if availability status is being changed and there are active bookings
+// Get current station status
+$status_check = $conn->prepare("SELECT availability_status FROM charging_station WHERE stat_id = ?");
+$status_check->bind_param("i", $stat_id);
+$status_check->execute();
+$status_result = $status_check->get_result();
+
+if ($status_result->num_rows > 0) {
+    $current_status = $status_result->fetch_assoc()['availability_status'];
+    
+    // If availability status is being changed and there are active bookings, prevent the change
+    if ($current_status !== $availability_status && hasActiveBookings($conn, $stat_id)) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Cannot change availability status while there are active bookings for this station'
+        ]);
+        $status_check->close();
+        exit;
+    }
+}
+$status_check->close();
 
 // Verify station belongs to provider
 $verify_sql = "SELECT stat_id FROM charging_station WHERE stat_id = ? AND prov_id = ?";
