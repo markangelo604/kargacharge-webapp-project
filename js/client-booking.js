@@ -256,8 +256,29 @@ function calculateTotal() {
     const durationMs = end - start;
     const durationHours = durationMs / (1000 * 60 * 60);
 
-    // Estimate energy consumption (average EV charges at ~7 kW)
-    const estimatedEnergy = durationHours * 7;
+    // Estimate energy consumption with more realistic values
+    // Average EV consumption during charging session (kWh)
+    let chargingRate;
+    
+    switch(selectedStation.charge_type) {
+        case 'AC Level 1':
+            chargingRate = 1.8; // 1.8kW typical for Level 1
+            break;
+        case 'AC Level 2':
+            chargingRate = 7.2; // 7.2kW typical for Level 2
+            break;
+        case 'DC Fast Charging':
+            chargingRate = 50; // 50kW typical for DC fast charging
+            break;
+        case 'Tesla Supercharger':
+            chargingRate = 80; // 80kW typical for Tesla Supercharger
+            break;
+        default:
+            chargingRate = 3.6; // Default fallback
+    }
+
+    // Calculate energy based on actual charging rate and duration
+    const estimatedEnergy = (chargingRate * durationHours);
 
     // Calculate cost
     const totalCost = estimatedEnergy * selectedStation.rate;

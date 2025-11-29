@@ -126,10 +126,11 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="rate" class="form-label">Rate (₱/kWh)</label>
-                                <input type="number" class="form-control" id="rate" name="rate" 
-                                    step="0.01" min="0" placeholder="e.g., 15.50" required>
-                                <div class="form-text">Enter the charging rate in Philippine Peso per kilowatt-hour</div>
+                                <label class="form-label">Rate (₱/kWh)</label>
+                                <div class="form-control-plaintext">
+                                    <span id="computedRate">₱0.00</span>
+                                    <small class="form-text text-muted">Automatically computed based on charge type</small>
+                                </div>
                             </div>
 
                             <div class="mb-3">

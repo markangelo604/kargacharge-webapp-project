@@ -98,6 +98,16 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Add charge type change listener
+    const chargeTypeSelect = document.getElementById('chargeType');
+    if (chargeTypeSelect) {
+        chargeTypeSelect.addEventListener('change', function() {
+            const selectedType = this.value;
+            const computedRate = computeRate(selectedType);
+            document.getElementById('computedRate').textContent = `₱${computedRate.toFixed(2)}`;
+        });
+    }
+
     // Confirm Delete Station Button
     const confirmDeleteBtn = document.getElementById('confirmDeleteStation');
     if (confirmDeleteBtn) {
@@ -325,9 +335,13 @@ function loadStationData(stationId) {
                 document.getElementById('stationLocation').value = station.location;
                 document.getElementById('placeType').value = station.place_type;
                 document.getElementById('chargeType').value = station.charge_type;
-                document.getElementById('rate').value = station.rate;
+                // Remove this line: document.getElementById('rate').value = station.rate;
                 document.getElementById('availabilityStatus').value = station.availability_status;
                 document.getElementById('details').value = station.details || '';
+                
+                // Display computed rate
+                const computedRate = computeRate(station.charge_type);
+                document.getElementById('computedRate').textContent = `₱${computedRate.toFixed(2)}`;
                 
                 // Check for active bookings and disable dropdown if needed
                 checkStationBookingsAndDisableDropdown(station.stat_id);
@@ -363,6 +377,10 @@ function handleStationSubmit() {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Saving...';
     
+    // Get computed rate
+    const chargeType = document.getElementById('chargeType').value;
+    const computedRate = computeRate(chargeType);
+    
     const formData = new FormData();
     
     // Add all form fields except images
@@ -371,7 +389,7 @@ function handleStationSubmit() {
     formData.append('location', document.getElementById('stationLocation').value);
     formData.append('place_type', document.getElementById('placeType').value);
     formData.append('charge_type', document.getElementById('chargeType').value);
-    formData.append('rate', document.getElementById('rate').value);
+    formData.append('rate', computedRate); // Use computed rate
     formData.append('availability_status', document.getElementById('availabilityStatus').value);
     formData.append('details', document.getElementById('details').value);
     
@@ -760,6 +778,17 @@ function displayNewImagePreviews() {
     });
     
     container.appendChild(imgContainer);
+}
+
+function computeRate(chargeType) {
+    const rates = {
+        'AC Level 1': 14.70,
+        'AC Level 2': 20.35,
+        'DC Fast Charging': 27.00,
+        'Tesla Supercharger': 19.00
+    };
+    
+    return rates[chargeType] || 17.00; // Default rate if not found
 }
 
 function removeNewImage(index) {
