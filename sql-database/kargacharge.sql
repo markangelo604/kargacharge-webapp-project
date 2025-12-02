@@ -190,3 +190,46 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+-- Add these tables to your kargacharge database
+
+-- Reports table for storing user-submitted issues
+CREATE TABLE IF NOT EXISTS `reports` (
+  `report_id` INT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT NOT NULL,
+  `station_id` INT NOT NULL,
+  `booking_id` INT NOT NULL,
+  `reason` VARCHAR(100) NOT NULL,
+  `description` TEXT NOT NULL,
+  `status` ENUM('Pending', 'In Review', 'Resolved', 'Closed') DEFAULT 'Pending',
+  `created_at` DATETIME NOT NULL,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `ev_owner`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`station_id`) REFERENCES `charging_station`(`stat_id`) ON DELETE CASCADE,
+  FOREIGN KEY (`booking_id`) REFERENCES `booking`(`book_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Reviews table for storing user ratings and feedback
+CREATE TABLE IF NOT EXISTS `reviews` (
+  `review_id` INT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT NOT NULL,
+  `station_id` INT NOT NULL,
+  `booking_id` INT NOT NULL,
+  `rating` INT NOT NULL CHECK (`rating` >= 1 AND `rating` <= 5),
+  `comment` TEXT,
+  `photos` LONGBLOB,
+  `anonymous` TINYINT(1) DEFAULT 0,
+  `created_at` DATETIME NOT NULL,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `ev_owner`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`station_id`) REFERENCES `charging_station`(`stat_id`) ON DELETE CASCADE,
+  FOREIGN KEY (`booking_id`) REFERENCES `booking`(`book_id`) ON DELETE CASCADE,
+  UNIQUE KEY `unique_booking_review` (`booking_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Add indexes for better query performance
+CREATE INDEX idx_reports_user ON reports(user_id);
+CREATE INDEX idx_reports_station ON reports(station_id);
+CREATE INDEX idx_reports_status ON reports(status);
+CREATE INDEX idx_reviews_user ON reviews(user_id);
+CREATE INDEX idx_reviews_station ON reviews(station_id);
+CREATE INDEX idx_reviews_rating ON reviews(rating);

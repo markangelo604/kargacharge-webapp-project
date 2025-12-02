@@ -952,3 +952,18 @@ function handleLogout() {
         window.location.href = 'client-login.html';
     });
 }
+const activeSessionBtn = document.getElementById('activeSessionBtn');
+if (activeSessionBtn) {
+    activeSessionBtn.addEventListener('click', function() {
+        // Get active booking for current user
+        fetch(`../php/get-active-booking.php?user_id=${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.booking_id) {
+                    window.location.href = `client-charging.html?booking_id=${data.booking_id}`;
+                } else {
+                    alert('No active charging session found');
+                }
+            });
+    });
+}

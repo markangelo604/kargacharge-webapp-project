@@ -351,6 +351,7 @@ function checkPendingBookings() {
 // Show success modal
 function showSuccessModal() {
     document.getElementById('successModal').classList.add('active');
+    window.location.href = `client-charging.html?booking_id=${bookingId}`;
 }
 
 // Close success modal
