@@ -94,7 +94,6 @@ function populateBookingInfo() {
     document.getElementById('stationRating').textContent = '4.8 (6)'; // Placeholder
     document.getElementById('bookingDate').textContent = bookingDateStr;
     document.getElementById('currentType').textContent = stationData.charge_type;
-    document.getElementById('totalRate').textContent = `₱ ${parseFloat(bookingData.rate).toFixed(2)}`;
 
     // Step 2: Finished
     document.getElementById('stationImage2').src = imageUrl;
@@ -105,7 +104,6 @@ function populateBookingInfo() {
     document.getElementById('stationRating2').textContent = '4.8 (6)'; // Placeholder
     document.getElementById('bookingDate2').textContent = bookingDateStr;
     document.getElementById('currentType2').textContent = stationData.charge_type;
-    document.getElementById('totalRate2').textContent = `₱ ${parseFloat(bookingData.rate).toFixed(2)}`;
 
     // Step 3: Completed
     document.getElementById('stationImage3').src = imageUrl;
