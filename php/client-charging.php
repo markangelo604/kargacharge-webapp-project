@@ -249,25 +249,31 @@ function submitReview($conn) {
         return;
     }
 
-    // Process uploaded photos
-    $photos_data = [];
-    if (isset($_FILES['photos']) && !empty($_FILES['photos']['name'][0])) {
-        foreach ($_FILES['photos']['tmp_name'] as $key => $tmp_name) {
-            if ($_FILES['photos']['error'][$key] === UPLOAD_ERR_OK) {
-                $photo_data = file_get_contents($tmp_name);
-                $photos_data[] = $photo_data;
-            }
-        }
+    // Get payment ID from booking
+    $get_payment = $conn->prepare("SELECT pay_id FROM payment WHERE book_id = ?");
+    $get_payment->bind_param("i", $booking_id);
+    $get_payment->execute();
+    $result = $get_payment->get_result();
+    
+    if ($result->num_rows === 0) {
+        // If no payment found, we can't submit review due to foreign key constraint
+        echo json_encode([
+            'success' => false,
+            'message' => 'No payment found for this booking. Cannot submit review.'
+        ]);
+        return;
     }
+    
+    $payment_data = $result->fetch_assoc();
+    $payment_id = $payment_data['pay_id'];
+    $get_payment->close();
 
-    $photos_value = !empty($photos_data) ? serialize($photos_data) : null;
-
-    // Insert review
+    // Insert review with payment ID
     $stmt = $conn->prepare("
-        INSERT INTO reviews (user_id, station_id, booking_id, rating, comment, photos, anonymous, created_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+        INSERT INTO reviews (rating, comment, pay_id) 
+        VALUES (?, ?, ?)
     ");
-    $stmt->bind_param("iiiissi", $user_id, $station_id, $booking_id, $rating, $comment, $photos_value, $anonymous);
+    $stmt->bind_param("isi", $rating, $comment, $payment_id);
 
     if ($stmt->execute()) {
         echo json_encode([

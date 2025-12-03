@@ -3,7 +3,6 @@ let bookingData = null;
 let stationData = null;
 let timerInterval = null;
 let selectedRating = 0;
-let uploadedPhotos = [];
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Charging page loaded');
@@ -188,9 +187,6 @@ function initializeEventListeners() {
         updateStarRating(selectedRating);
     });
 
-    // Photo upload
-    document.getElementById('photoUpload').addEventListener('change', handlePhotoUpload);
-
     // Submit review
     document.getElementById('submitReviewBtn').addEventListener('click', submitReview);
 }
@@ -340,57 +336,6 @@ function updateStarRating(rating) {
     });
 }
 
-// Handle photo upload
-function handlePhotoUpload(event) {
-    const files = Array.from(event.target.files);
-    const previewContainer = document.getElementById('photoPreview');
-
-    files.forEach(file => {
-        if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                uploadedPhotos.push({
-                    file: file,
-                    dataUrl: e.target.result
-                });
-
-                const photoItem = document.createElement('div');
-                photoItem.className = 'photo-preview-item';
-                photoItem.innerHTML = `
-                    <img src="${e.target.result}" alt="Preview">
-                    <button class="photo-remove-btn" onclick="removePhoto(${uploadedPhotos.length - 1})">×</button>
-                `;
-                previewContainer.appendChild(photoItem);
-            };
-
-            reader.readAsDataURL(file);
-        }
-    });
-
-    // Clear file input
-    event.target.value = '';
-}
-
-// Remove photo
-window.removePhoto = function(index) {
-    uploadedPhotos.splice(index, 1);
-    
-    // Re-render preview
-    const previewContainer = document.getElementById('photoPreview');
-    previewContainer.innerHTML = '';
-    
-    uploadedPhotos.forEach((photo, idx) => {
-        const photoItem = document.createElement('div');
-        photoItem.className = 'photo-preview-item';
-        photoItem.innerHTML = `
-            <img src="${photo.dataUrl}" alt="Preview">
-            <button class="photo-remove-btn" onclick="removePhoto(${idx})">×</button>
-        `;
-        previewContainer.appendChild(photoItem);
-    });
-};
-
 // Submit review
 function submitReview() {
     if (selectedRating === 0) {
@@ -413,11 +358,6 @@ function submitReview() {
     formData.append('rating', selectedRating);
     formData.append('comment', comment);
     formData.append('anonymous', anonymous ? '1' : '0');
-
-    // Add photos
-    uploadedPhotos.forEach((photo, index) => {
-        formData.append(`photos[]`, photo.file);
-    });
 
     fetch('../php/client-charging.php', {
         method: 'POST',
