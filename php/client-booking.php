@@ -43,9 +43,9 @@
             return;
         }
 
-        // Convert datetime strings to timestamps
-        $start_timestamp = strtotime($start_time);
-        $end_timestamp = strtotime($end_time);
+        // Convert datetime strings to timestamps and subtract 8 hours (28800 seconds) for Philippine timezone
+        $start_timestamp = strtotime($start_time) - 28800;
+        $end_timestamp = strtotime($end_time) - 28800;
         
         // Extract date from start_time
         $booking_date = date('Y-m-d', $start_timestamp);

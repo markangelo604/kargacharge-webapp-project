@@ -357,7 +357,7 @@ function showSuccessModal() {
 // Close success modal
 function closeSuccessModal() {
     document.getElementById('successModal').classList.remove('active');
-    window.location.href = 'client-dashboard.html';
+    window.location.href = `client-charging.html?booking_id=${bookingId}`;
 }
 
 // Handle get direction

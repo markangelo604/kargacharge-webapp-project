@@ -120,10 +120,19 @@ function populateBookingInfo() {
 function startChargingTimer() {
     if (!bookingData) return;
 
+    const startTime = bookingData.time_in * 1000; // Convert to milliseconds
     const endTime = bookingData.time_out * 1000; // Convert to milliseconds
     
     timerInterval = setInterval(() => {
         const now = Date.now();
+
+        // Check if current time is before start time
+        if (now < startTime) {
+            document.getElementById('timerDisplay').textContent = '00:00:00';
+            return;
+        }
+
+        // Calculate time left from now to end time
         const timeLeft = endTime - now;
 
         if (timeLeft <= 0) {
