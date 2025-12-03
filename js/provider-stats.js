@@ -27,6 +27,9 @@ function loadProviderStats() {
     fetch(`../php/get-provider-stats.php?prov_id=${providerId}`)
         .then(response => response.json())
         .then(data => {
+            console.log('Raw data received:', data);
+            console.log('Station Performance:', data.station_performance);
+            
             if (data.success) {
                 displayStats(data);
             } else {
@@ -72,6 +75,10 @@ function displayStats(data) {
     const statsContent = document.getElementById('statsContent');
     if (!statsContent) return;
     
+    // Ensure total_revenue is a valid number
+    const totalRevenue = parseFloat(data.total_revenue) || 0;
+    console.log('Formatted Total Revenue:', totalRevenue);
+    
     statsContent.innerHTML = `
         <!-- Overview Cards -->
         <div class="stats-cards">
@@ -83,7 +90,7 @@ function displayStats(data) {
                 </div>
                 <div class="stat-info">
                     <p class="stat-label">Total Stations</p>
-                    <h3 class="stat-value">${data.total_stations}</h3>
+                    <h3 class="stat-value">${data.total_stations || 0}</h3>
                 </div>
             </div>
             
@@ -95,7 +102,7 @@ function displayStats(data) {
                 </div>
                 <div class="stat-info">
                     <p class="stat-label">Total Bookings</p>
-                    <h3 class="stat-value">${data.total_bookings}</h3>
+                    <h3 class="stat-value">${data.total_bookings || 0}</h3>
                 </div>
             </div>
             
@@ -108,7 +115,7 @@ function displayStats(data) {
                 </div>
                 <div class="stat-info">
                     <p class="stat-label">Total Revenue</p>
-                    <h3 class="stat-value">₱${formatNumber(data.total_revenue)}</h3>
+                    <h3 class="stat-value">₱${formatNumber(totalRevenue)}</h3>
                 </div>
             </div>
             
@@ -121,7 +128,7 @@ function displayStats(data) {
                 <div class="stat-info">
                     <p class="stat-label">Avg Rating</p>
                     <h3 class="stat-value">${data.average_rating > 0 ? data.average_rating.toFixed(1) : 'N/A'}</h3>
-                    <small class="stat-sublabel">${data.total_reviews} reviews</small>
+                    <small class="stat-sublabel">${data.total_reviews || 0} reviews</small>
                 </div>
             </div>
         </div>
@@ -131,26 +138,26 @@ function displayStats(data) {
             <h4 class="section-title">Station Status</h4>
             <div class="status-cards">
                 <div class="status-card available">
-                    <div class="status-count">${data.available_stations}</div>
+                    <div class="status-count">${data.available_stations || 0}</div>
                     <div class="status-label">Available</div>
                 </div>
                 <div class="status-card occupied">
-                    <div class="status-count">${data.occupied_stations}</div>
+                    <div class="status-count">${data.occupied_stations || 0}</div>
                     <div class="status-label">Occupied</div>
                 </div>
                 <div class="status-card maintenance">
-                    <div class="status-count">${data.maintenance_stations}</div>
+                    <div class="status-count">${data.maintenance_stations || 0}</div>
                     <div class="status-label">Maintenance</div>
                 </div>
                 <div class="status-card out-of-service">
-                    <div class="status-count">${data.out_of_service_stations}</div>
+                    <div class="status-count">${data.out_of_service_stations || 0}</div>
                     <div class="status-label">Out of Service</div>
                 </div>
             </div>
         </div>
         
         <!-- Revenue Chart -->
-        ${data.revenue_by_month.length > 0 ? `
+        ${data.revenue_by_month && data.revenue_by_month.length > 0 ? `
         <div class="chart-container">
             <h4 class="section-title">Revenue Trend (Last 6 Months)</h4>
             <div class="revenue-chart">
@@ -160,16 +167,21 @@ function displayStats(data) {
         ` : ''}
         
         <!-- Station Performance -->
-        ${data.station_performance.length > 0 ? `
+        ${data.station_performance && data.station_performance.length > 0 ? `
         <div class="performance-section">
             <h4 class="section-title">Station Performance</h4>
             <div class="performance-list">
-                ${data.station_performance.map(station => `
+                ${data.station_performance.map(station => {
+                    // Ensure revenue is a valid number
+                    const revenue = parseFloat(station.revenue) || 0;
+                    console.log(`Station ${station.stat_name} revenue:`, revenue);
+                    
+                    return `
                     <div class="performance-item">
                         <div class="performance-header">
                             <div>
                                 <h5 class="station-name">${station.stat_name || 'Unnamed Station'}</h5>
-                                <p class="station-location">${station.location}</p>
+                                <p class="station-location">${station.location || 'N/A'}</p>
                             </div>
                             <span class="station-status ${getStatusClass(station.status)}">
                                 ${station.status}
@@ -178,11 +190,11 @@ function displayStats(data) {
                         <div class="performance-stats">
                             <div class="perf-stat">
                                 <span class="perf-label">Bookings</span>
-                                <span class="perf-value">${station.total_bookings}</span>
+                                <span class="perf-value">${station.total_bookings || 0}</span>
                             </div>
                             <div class="perf-stat">
                                 <span class="perf-label">Revenue</span>
-                                <span class="perf-value">₱${formatNumber(station.revenue)}</span>
+                                <span class="perf-value">₱${formatNumber(revenue)}</span>
                             </div>
                             <div class="perf-stat">
                                 <span class="perf-label">Rating</span>
@@ -190,13 +202,14 @@ function displayStats(data) {
                             </div>
                         </div>
                     </div>
-                `).join('')}
+                `;
+                }).join('')}
             </div>
         </div>
         ` : ''}
         
         <!-- Recent Bookings -->
-        ${data.recent_bookings.length > 0 ? `
+        ${data.recent_bookings && data.recent_bookings.length > 0 ? `
         <div class="recent-bookings-section">
             <h4 class="section-title">Recent Bookings</h4>
             <div class="bookings-list">
@@ -207,13 +220,13 @@ function displayStats(data) {
                             <span class="booking-status status-${booking.status}">${booking.status}</span>
                         </div>
                         <div class="booking-details">
-                            <p class="booking-station">${booking.station_name}</p>
-                            <p class="booking-customer">${booking.customer_name}</p>
+                            <p class="booking-station">${booking.station_name || 'N/A'}</p>
+                            <p class="booking-customer">${booking.customer_name || 'Guest'}</p>
                             <p class="booking-date">${formatDate(booking.date)}</p>
                         </div>
                         <div class="booking-footer">
-                            <span class="booking-duration">${booking.duration}h</span>
-                            <span class="booking-revenue">₱${formatNumber(booking.revenue)}</span>
+                            <span class="booking-duration">${formatNumber(booking.duration || 0)}h</span>
+                            <span class="booking-revenue">₱${formatNumber(booking.revenue || 0)}</span>
                         </div>
                     </div>
                 `).join('')}
@@ -224,20 +237,21 @@ function displayStats(data) {
 }
 
 function createRevenueChart(data) {
-    if (data.length === 0) return '<p class="no-data">No revenue data available</p>';
+    if (!data || data.length === 0) return '<p class="no-data">No revenue data available</p>';
     
-    const maxRevenue = Math.max(...data.map(d => d.revenue));
+    const maxRevenue = Math.max(...data.map(d => parseFloat(d.revenue) || 0));
     const chartHeight = 200;
     
     return `
         <div class="chart">
             <div class="chart-bars">
                 ${data.map(item => {
-                    const height = maxRevenue > 0 ? (item.revenue / maxRevenue) * 100 : 0;
+                    const revenue = parseFloat(item.revenue) || 0;
+                    const height = maxRevenue > 0 ? (revenue / maxRevenue) * 100 : 0;
                     return `
                         <div class="chart-bar-wrapper">
-                            <div class="chart-bar" style="height: ${height}%" title="₱${formatNumber(item.revenue)}">
-                                <span class="bar-value">₱${formatNumber(item.revenue)}</span>
+                            <div class="chart-bar" style="height: ${height}%" title="₱${formatNumber(revenue)}">
+                                <span class="bar-value">₱${formatNumber(revenue)}</span>
                             </div>
                             <span class="bar-label">${item.month}</span>
                         </div>
@@ -249,13 +263,15 @@ function createRevenueChart(data) {
 }
 
 function formatNumber(num) {
+    const number = parseFloat(num) || 0;
     return new Intl.NumberFormat('en-PH', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
-    }).format(num);
+    }).format(number);
 }
 
 function formatDate(dateStr) {
+    if (!dateStr) return 'N/A';
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { 
         year: 'numeric', 

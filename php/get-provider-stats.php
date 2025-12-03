@@ -83,16 +83,18 @@ $stats['maintenance_stations'] = intval($station_data['maintenance']);
 $stats['out_of_service_stations'] = intval($station_data['out_of_service']);
 $stmt->close();
 
-// 2. Get total bookings and calculate revenue properly
+// 2. Get total bookings and revenue using payment table
 $sql = "SELECT 
             b.book_id,
             b.time_in,
             b.time_out,
             b.rate,
             b.status,
-            cs.charge_type
+            cs.charge_type,
+            p.total_amount
         FROM booking b
         INNER JOIN charging_station cs ON b.stat_id = cs.stat_id
+        LEFT JOIN payment p ON b.book_id = p.book_id
         WHERE cs.prov_id = ?";
 
 $stmt = $conn->prepare($sql);
@@ -110,40 +112,39 @@ $pending = 0;
 while ($row = $result->fetch_assoc()) {
     $total_bookings++;
     
+    // Normalize status for comparison
+    $status = $row['status'] ? strtolower(trim($row['status'])) : 'unknown';
+    
     // Count by status
-    switch($row['status']) {
-        case 'completed':
-            $completed++;
-            // Calculate revenue for completed bookings
-            if (!empty($row['time_in']) && !empty($row['time_out']) && !empty($row['rate'])) {
-                // Convert time values to timestamps if they're datetime strings
-                $time_in = is_numeric($row['time_in']) ? $row['time_in'] : strtotime($row['time_in']);
-                $time_out = is_numeric($row['time_out']) ? $row['time_out'] : strtotime($row['time_out']);
-                
-                if ($time_in && $time_out && $time_out > $time_in) {
-                    $duration_seconds = $time_out - $time_in;
-                    if ($duration_seconds > 0) {
-                        $energy_kwh = calculateEnergy($duration_seconds, $row['charge_type']);
-                        $revenue = $energy_kwh * floatval($row['rate']);
-                        $total_revenue += $revenue;
-                    }
-                }
-            }
-            break;
-        case 'ongoing':
-            $ongoing++;
-            break;
-        case 'cancelled':
-            $cancelled++;
-            break;
-        case 'pending':
-            $pending++;
-            break;
+    if ($status === 'completed') {
+        $completed++;
+    } elseif ($status === 'ongoing') {
+        $ongoing++;
+    } elseif ($status === 'cancelled') {
+        $cancelled++;
+    } elseif ($status === 'pending') {
+        $pending++;
+    } else {
+        // If status doesn't match any known value, count as pending
+        $pending++;
+    }
+    
+    // Calculate revenue for ANY booking with valid time data (not cancelled)
+    if ($status !== 'cancelled' && $row['time_in'] > 0 && $row['time_out'] > 0 && $row['time_out'] > $row['time_in']) {
+        // Use payment amount if available, otherwise calculate
+        if (!empty($row['total_amount'])) {
+            $total_revenue += floatval($row['total_amount']);
+        } else {
+            $duration_seconds = $row['time_out'] - $row['time_in'];
+            $energy_kwh = calculateEnergy($duration_seconds, $row['charge_type']);
+            $revenue = $energy_kwh * floatval($row['rate']);
+            $total_revenue += $revenue;
+        }
     }
 }
 
 $stats['total_bookings'] = $total_bookings;
-$stats['total_revenue'] = round($total_revenue, 2); // Ensure it's properly rounded
+$stats['total_revenue'] = round($total_revenue, 2);
 $stats['bookings_by_status']['completed'] = $completed;
 $stats['bookings_by_status']['ongoing'] = $ongoing;
 $stats['bookings_by_status']['cancelled'] = $cancelled;
@@ -181,10 +182,12 @@ $sql = "SELECT
             cs.stat_name,
             cs.location,
             cs.charge_type,
-            eo.name as customer_name
+            eo.name as customer_name,
+            p.total_amount
         FROM booking b
         INNER JOIN charging_station cs ON b.stat_id = cs.stat_id
         LEFT JOIN ev_owner eo ON b.evown_id = eo.id
+        LEFT JOIN payment p ON b.book_id = p.book_id
         WHERE cs.prov_id = ?
         ORDER BY b.date DESC, b.book_id DESC
         LIMIT 10";
@@ -195,20 +198,22 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 while ($row = $result->fetch_assoc()) {
-    // Convert time values to timestamps if they're datetime strings
-    $time_in = is_numeric($row['time_in']) ? $row['time_in'] : strtotime($row['time_in']);
-    $time_out = is_numeric($row['time_out']) ? $row['time_out'] : strtotime($row['time_out']);
+    $duration_seconds = 0;
+    $duration_hours = 0;
+    $energy_kwh = 0;
+    $revenue = 0;
     
-    if ($time_in && $time_out && $time_out > $time_in) {
-        $duration_seconds = $time_out - $time_in;
+    if ($row['time_in'] > 0 && $row['time_out'] > 0 && $row['time_out'] > $row['time_in']) {
+        $duration_seconds = $row['time_out'] - $row['time_in'];
         $duration_hours = $duration_seconds / 3600;
         $energy_kwh = calculateEnergy($duration_seconds, $row['charge_type']);
-        $revenue = $energy_kwh * floatval($row['rate']);
-    } else {
-        $duration_seconds = 0;
-        $duration_hours = 0;
-        $energy_kwh = 0;
-        $revenue = 0;
+        
+        // Use payment amount if available, otherwise calculate
+        if (!empty($row['total_amount'])) {
+            $revenue = floatval($row['total_amount']);
+        } else {
+            $revenue = $energy_kwh * floatval($row['rate']);
+        }
     }
     
     $stats['recent_bookings'][] = [
@@ -216,12 +221,12 @@ while ($row = $result->fetch_assoc()) {
         'date' => $row['date'],
         'time_in' => $row['time_in'],
         'time_out' => $row['time_out'],
-        'duration' => $duration_hours,
+        'duration' => round($duration_hours, 2),
         'duration_seconds' => $duration_seconds,
         'energy_kwh' => round($energy_kwh, 2),
         'status' => $row['status'],
         'rate' => floatval($row['rate']),
-        'revenue' => $revenue,
+        'revenue' => round($revenue, 2),
         'station_name' => $row['stat_name'],
         'customer_name' => $row['customer_name'] ?? 'Guest'
     ];
@@ -236,11 +241,13 @@ $sql = "SELECT
             b.time_in,
             b.time_out,
             b.rate,
-            cs.charge_type
+            b.status,
+            cs.charge_type,
+            p.total_amount
         FROM booking b
         INNER JOIN charging_station cs ON b.stat_id = cs.stat_id
+        LEFT JOIN payment p ON b.book_id = p.book_id
         WHERE cs.prov_id = ? 
-            AND b.status = 'completed'
             AND b.date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
         ORDER BY month ASC";
 
@@ -251,24 +258,31 @@ $result = $stmt->get_result();
 
 $monthly_data = [];
 while ($row = $result->fetch_assoc()) {
-    // Convert time values to timestamps if they're datetime strings
-    $time_in = is_numeric($row['time_in']) ? $row['time_in'] : strtotime($row['time_in']);
-    $time_out = is_numeric($row['time_out']) ? $row['time_out'] : strtotime($row['time_out']);
+    $revenue = 0;
+    $status = strtolower(trim($row['status']));
     
-    if ($time_in && $time_out && $time_out > $time_in) {
-        $duration_seconds = $time_out - $time_in;
-        $energy_kwh = calculateEnergy($duration_seconds, $row['charge_type']);
-        $revenue = $energy_kwh * floatval($row['rate']);
-        
-        $month = $row['month'];
-        if (!isset($monthly_data[$month])) {
-            $monthly_data[$month] = [
-                'month_label' => $row['month_label'],
-                'revenue' => 0,
-                'bookings' => 0
-            ];
+    // Only count completed bookings for revenue
+    if ($status === 'completed') {
+        // Use payment amount if available, otherwise calculate
+        if (!empty($row['total_amount'])) {
+            $revenue = floatval($row['total_amount']);
+        } elseif ($row['time_in'] > 0 && $row['time_out'] > 0 && $row['time_out'] > $row['time_in']) {
+            $duration_seconds = $row['time_out'] - $row['time_in'];
+            $energy_kwh = calculateEnergy($duration_seconds, $row['charge_type']);
+            $revenue = $energy_kwh * floatval($row['rate']);
         }
-        
+    }
+    
+    $month = $row['month'];
+    if (!isset($monthly_data[$month])) {
+        $monthly_data[$month] = [
+            'month_label' => $row['month_label'],
+            'revenue' => 0,
+            'bookings' => 0
+        ];
+    }
+    
+    if ($status === 'completed') {
         $monthly_data[$month]['revenue'] += $revenue;
         $monthly_data[$month]['bookings']++;
     }
@@ -295,7 +309,8 @@ $sql = "SELECT
             b.time_out,
             b.rate,
             b.status,
-            r.rating
+            r.rating,
+            p.total_amount
         FROM charging_station cs
         LEFT JOIN booking b ON cs.stat_id = b.stat_id
         LEFT JOIN payment p ON b.book_id = p.book_id
@@ -317,6 +332,7 @@ while ($row = $result->fetch_assoc()) {
             'stat_name' => $row['stat_name'],
             'location' => $row['location'],
             'status' => $row['availability_status'],
+            'charge_type' => $row['charge_type'],
             'total_bookings' => 0,
             'revenue' => 0,
             'ratings' => []
@@ -326,17 +342,21 @@ while ($row = $result->fetch_assoc()) {
     if ($row['book_id']) {
         $station_performance[$stat_id]['total_bookings']++;
         
-        if ($row['status'] === 'completed') {
-            // Convert time values to timestamps if they're datetime strings
-            $time_in = is_numeric($row['time_in']) ? $row['time_in'] : strtotime($row['time_in']);
-            $time_out = is_numeric($row['time_out']) ? $row['time_out'] : strtotime($row['time_out']);
-            
-            if ($time_in && $time_out && $time_out > $time_in) {
-                $duration_seconds = $time_out - $time_in;
+        $status = strtolower(trim($row['status']));
+        
+        // Only calculate revenue for completed bookings
+        if ($status === 'completed' && $row['time_in'] > 0 && $row['time_out'] > 0 && $row['time_out'] > $row['time_in']) {
+            // Use payment amount if available, otherwise calculate
+            if (!empty($row['total_amount'])) {
+                $revenue = floatval($row['total_amount']);
+                error_log("Station {$stat_id}: Using payment amount: {$revenue}");
+            } else {
+                $duration_seconds = $row['time_out'] - $row['time_in'];
                 $energy_kwh = calculateEnergy($duration_seconds, $row['charge_type']);
                 $revenue = $energy_kwh * floatval($row['rate']);
-                $station_performance[$stat_id]['revenue'] += $revenue;
+                error_log("Station {$stat_id}: Calculated revenue: {$revenue} (Energy: {$energy_kwh} kWh, Rate: {$row['rate']})");
             }
+            $station_performance[$stat_id]['revenue'] += $revenue;
         }
         
         if ($row['rating']) {
@@ -352,13 +372,16 @@ foreach ($station_performance as $data) {
         $avg_rating = round(array_sum($data['ratings']) / count($data['ratings']), 1);
     }
     
+    $revenue = round($data['revenue'], 2);
+    error_log("Station {$data['stat_id']} ({$data['stat_name']}): Total Revenue = {$revenue}");
+    
     $stats['station_performance'][] = [
         'stat_id' => $data['stat_id'],
         'stat_name' => $data['stat_name'],
         'location' => $data['location'],
         'status' => $data['status'],
         'total_bookings' => $data['total_bookings'],
-        'revenue' => round($data['revenue'], 2),
+        'revenue' => $revenue,
         'avg_rating' => $avg_rating
     ];
 }
@@ -371,8 +394,10 @@ usort($stats['station_performance'], function($a, $b) {
 $stmt->close();
 $conn->close();
 
-// Ensure total_revenue is properly formatted as a number
-$stats['total_revenue'] = floatval($stats['total_revenue']);
+// Debug: Log the final stats
+error_log("Final Stats - Total Revenue: " . $stats['total_revenue']);
+error_log("Station Performance Count: " . count($stats['station_performance']));
 
-echo json_encode($stats);
+// Ensure proper JSON encoding with numeric check
+echo json_encode($stats, JSON_NUMERIC_CHECK);
 ?>
