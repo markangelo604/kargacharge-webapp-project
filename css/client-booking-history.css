@@ -5,8 +5,8 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #f5f5f5;
     min-height: 100vh;
     padding: 0;
     margin: 0;
@@ -26,7 +26,7 @@ body {
 
 /* Header */
 .history-header {
-    background: linear-gradient(135deg, #079FDB 0%, #0563bb 100%);
+    background: linear-gradient(135deg, #079FDB 0%, #0EA5E9 100%);
     color: white;
     padding: 16px 20px;
     display: flex;
@@ -35,7 +35,7 @@ body {
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     flex-shrink: 0;
 }
 
@@ -50,7 +50,7 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     color: white;
     flex-shrink: 0;
 }
@@ -78,7 +78,7 @@ body {
 .filter-bar {
     background: white;
     padding: 12px 20px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid #f3f4f6;
     display: none;
     animation: slideDown 0.3s ease;
     flex-shrink: 0;
@@ -112,7 +112,7 @@ body {
 }
 
 .filter-chip {
-    background: #f3f4f6;
+    background: #f8f9fa;
     border: 1px solid #e5e7eb;
     padding: 8px 16px;
     border-radius: 20px;
@@ -130,7 +130,7 @@ body {
 }
 
 .filter-chip.active {
-    background: #079FDB;
+    background: linear-gradient(135deg, #079FDB 0%, #0EA5E9 100%);
     color: white;
     border-color: #079FDB;
 }
@@ -141,7 +141,7 @@ body {
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     padding: 20px;
-    background: #f9fafb;
+    background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
     flex-shrink: 0;
 }
 
@@ -153,14 +153,14 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
     flex-shrink: 0;
 }
 
 .stat-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(7, 159, 219, 0.15);
 }
 
 .stat-icon {
@@ -194,7 +194,7 @@ body {
 .stat-value {
     font-size: 24px;
     font-weight: 700;
-    color: #1f2937;
+    color: #1a1a1a;
 }
 
 .stat-label {
@@ -210,6 +210,7 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
 }
 
 /* Loading State */
@@ -247,7 +248,7 @@ body {
 .empty-state h3 {
     font-size: 20px;
     font-weight: 600;
-    color: #1f2937;
+    color: #1a1a1a;
     margin: 0;
 }
 
@@ -258,11 +259,11 @@ body {
 }
 
 .btn-browse {
-    background: #079FDB;
+    background: linear-gradient(135deg, #079FDB 0%, #0EA5E9 100%);
     color: white;
     border: none;
     padding: 12px 24px;
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -270,13 +271,14 @@ body {
     align-items: center;
     gap: 8px;
     margin-top: 8px;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(7, 159, 219, 0.25);
 }
 
 .btn-browse:hover {
-    background: #0563bb;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(7, 159, 219, 0.3);
+    background: linear-gradient(135deg, #0588c4 0%, #0284c7 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(7, 159, 219, 0.35);
 }
 
 .btn-browse:active {
@@ -289,12 +291,13 @@ body {
     border-radius: 16px;
     padding: 16px;
     margin-bottom: 16px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid #f3f4f6;
     transition: all 0.3s ease;
     cursor: pointer;
     position: relative;
     overflow: hidden;
     flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .booking-card::before {
@@ -326,7 +329,7 @@ body {
 
 .booking-card:hover {
     transform: translateX(4px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(7, 159, 219, 0.15);
 }
 
 .booking-card:hover::before {
@@ -343,7 +346,7 @@ body {
 .station-name {
     font-size: 16px;
     font-weight: 600;
-    color: #1f2937;
+    color: #1a1a1a;
     margin: 0 0 4px 0;
 }
 
@@ -423,10 +426,10 @@ body {
 }
 
 .view-details-btn {
-    background: #f3f4f6;
+    background: #f8f9fa;
     border: none;
     padding: 6px 16px;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
     color: #4b5563;
@@ -438,8 +441,8 @@ body {
 }
 
 .view-details-btn:hover {
-    background: #e5e7eb;
-    color: #1f2937;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    color: #079FDB;
 }
 
 .view-details-btn svg {
@@ -453,10 +456,11 @@ body {
     border: none;
     max-height: 90vh;
     overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
 .modal-header {
-    background: linear-gradient(135deg, #079FDB 0%, #0563bb 100%);
+    background: linear-gradient(135deg, #079FDB 0%, #0EA5E9 100%);
     color: white;
     border-radius: 16px 16px 0 0;
     padding: 20px;
@@ -510,13 +514,13 @@ body {
 
 .detail-item-value {
     font-size: 14px;
-    color: #1f2937;
+    color: #1a1a1a;
     font-weight: 600;
     text-align: right;
 }
 
 /* Responsive Design */
-@media (max-width: 360px) {
+@media (max-width: 375px) {
     .stats-container {
         grid-template-columns: 1fr;
         gap: 8px;

@@ -147,7 +147,7 @@ function completeTransaction($conn) {
 
     try {
         // Update booking to mark transaction as completed
-        $update_booking = $conn->prepare("UPDATE booking SET status = 'Transaction Completed' WHERE book_id = ?");
+        $update_booking = $conn->prepare("UPDATE booking SET status = 'Completed' WHERE book_id = ?");
         $update_booking->bind_param("i", $booking_id);
         
         if (!$update_booking->execute()) {

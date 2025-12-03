@@ -5,19 +5,22 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #f5f5f5;
+    overflow: hidden;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
 }
 
 .mobile-container {
     max-width: 480px;
     margin: 0 auto;
-    background: #ffffff;
-    min-height: 100vh;
+    width: 100%;
+    height: 100vh;
     height: 100dvh;
+    background-color: white;
     position: relative;
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
 }
@@ -32,11 +35,12 @@ body {
 
 .charging-step.active {
     display: flex;
+    animation: fadeInUp 0.4s ease;
 }
 
 /* Header */
 .charging-header {
-    background: linear-gradient(135deg, #079FDB 0%, #0563bb 100%);
+    background: linear-gradient(135deg, #079FDB 0%, #0EA5E9 100%);
     color: white;
     padding: 16px 20px;
     display: flex;
@@ -45,7 +49,7 @@ body {
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     flex-shrink: 0;
 }
 
@@ -60,7 +64,7 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     color: white;
     flex-shrink: 0;
 }
@@ -92,6 +96,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
 }
 
 /* Station Card */
@@ -99,7 +104,12 @@ body {
     background: white;
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.station-card:hover {
+    box-shadow: 0 4px 12px rgba(7, 159, 219, 0.15);
 }
 
 .station-image {
@@ -125,6 +135,7 @@ body {
     gap: 6px;
     font-size: 14px;
     color: #6b7280;
+    margin-bottom: 4px;
 }
 
 .station-rating svg {
@@ -142,7 +153,7 @@ body {
     background: white;
     border-radius: 12px;
     padding: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .detail-row {
@@ -150,7 +161,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 12px 0;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid #f3f4f6;
 }
 
 .detail-row:last-child {
@@ -177,11 +188,11 @@ body {
 
 /* Timer Container */
 .timer-container {
-    background: linear-gradient(135deg, #079FDB 0%, #0563bb 100%);
+    background: linear-gradient(135deg, #079FDB 0%, #0EA5E9 100%);
     border-radius: 16px;
     padding: 32px;
     text-align: center;
-    box-shadow: 0 4px 16px rgba(7, 159, 219, 0.3);
+    box-shadow: 0 4px 12px rgba(7, 159, 219, 0.25);
 }
 
 .timer-display {
@@ -207,7 +218,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .rate-label {
@@ -226,16 +237,18 @@ body {
 .policy-notice,
 .agreement-notice {
     background: #fef3c7;
-    border-radius: 8px;
-    padding: 12px 16px;
+    border-radius: 12px;
+    padding: 14px 16px;
     font-size: 13px;
     color: #92400e;
     line-height: 1.5;
+    border-left: 4px solid #f59e0b;
 }
 
 .agreement-notice {
     background: #dbeafe;
     color: #1e40af;
+    border-left: 4px solid #0ea5e9;
 }
 
 .policy-link {
@@ -254,7 +267,7 @@ body {
 .btn-submit {
     width: 100%;
     padding: 16px;
-    background: linear-gradient(135deg, #079FDB 0%, #0563bb 100%);
+    background: linear-gradient(135deg, #079FDB 0%, #0EA5E9 100%);
     color: white;
     border: none;
     border-radius: 12px;
@@ -262,14 +275,15 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(7, 159, 219, 0.3);
+    box-shadow: 0 4px 12px rgba(7, 159, 219, 0.25);
 }
 
 .btn-finish:hover,
 .btn-continue:hover,
 .btn-submit:hover {
+    background: linear-gradient(135deg, #0588c4 0%, #0284c7 100%);
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(7, 159, 219, 0.4);
+    box-shadow: 0 6px 16px rgba(7, 159, 219, 0.35);
 }
 
 .btn-finish:active,
@@ -289,18 +303,25 @@ body {
     padding: 16px;
     background: white;
     color: #6b7280;
-    border: 2px solid #d1d5db;
+    border: 2px solid #e5e7eb;
     border-radius: 12px;
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 .btn-report:hover {
-    background: #f3f4f6;
-    border-color: #9ca3af;
-    color: #1a1a1a;
+    background: #f8f9fa;
+    border-color: #079FDB;
+    color: #079FDB;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(7, 159, 219, 0.15);
+}
+
+.btn-report:active {
+    transform: translateY(0);
 }
 
 /* Rating Section */
@@ -357,7 +378,8 @@ body {
 }
 
 .photo-upload-label:hover .photo-icon {
-    background: #e5e7eb;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-color: #079FDB;
     transform: scale(1.05);
 }
 
@@ -365,7 +387,8 @@ body {
     width: 100px;
     height: 100px;
     border-radius: 12px;
-    background: #f3f4f6;
+    background: #f8f9fa;
+    border: 2px dashed #d1d5db;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -407,8 +430,9 @@ body {
     position: relative;
     width: 80px;
     height: 80px;
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .photo-preview-item img {
@@ -433,10 +457,16 @@ body {
     justify-content: center;
     font-size: 16px;
     line-height: 1;
+    transition: all 0.2s ease;
 }
 
 .photo-remove-btn:hover {
     background: rgba(0, 0, 0, 0.8);
+    transform: scale(1.1);
+}
+
+.photo-remove-btn:active {
+    transform: scale(0.95);
 }
 
 /* Comment Section */
@@ -455,8 +485,8 @@ body {
 .comment-input {
     width: 100%;
     padding: 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
     font-size: 14px;
     font-family: inherit;
     resize: vertical;
@@ -502,6 +532,7 @@ body {
 .modal-content {
     border-radius: 16px;
     border: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
 .modal-header {
@@ -523,8 +554,74 @@ body {
     padding: 16px 24px;
 }
 
+.form-label {
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.form-control {
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    padding: 10px 14px;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: #079FDB;
+    box-shadow: 0 0 0 3px rgba(7, 159, 219, 0.1);
+}
+
+.btn-primary {
+    background-color: #079FDB;
+    border-color: #079FDB;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 500;
+}
+
+.btn-primary:hover {
+    background-color: #0588c4;
+    border-color: #0588c4;
+}
+
+.btn-secondary {
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 500;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+.loading {
+    animation: pulse 2s ease-in-out infinite;
+}
+
 /* Responsive Design */
-@media (max-width: 360px) {
+@media (max-width: 375px) {
+    .mobile-container {
+        max-width: 100%;
+    }
+
     .charging-content {
         padding: 16px;
         gap: 16px;
@@ -546,36 +643,15 @@ body {
     .action-buttons {
         grid-template-columns: 1fr;
     }
-}
 
-/* Loading Animation */
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
+    .station-info h2 {
+        font-size: 16px;
     }
-    50% {
-        opacity: 0.6;
-    }
-}
 
-.loading {
-    animation: pulse 2s ease-in-out infinite;
-}
-
-/* Success Animation */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
+    .detail-section,
+    .rate-display {
+        padding: 14px;
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.charging-step.active {
-    animation: fadeInUp 0.4s ease;
 }
 
 /* Support for devices with notches */
