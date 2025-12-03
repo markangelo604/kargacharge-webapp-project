@@ -10,6 +10,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <link rel="stylesheet" href="../css/provider-dashboard.css">
     <link rel="stylesheet" href="../css/provider-stats.css">
+    <link rel="stylesheet" href="../css/provider-reviews.css">
 </head>
 <body>
     <div class="mobile-container">
@@ -28,15 +29,12 @@
                     </div>
                     <p class="dashboard-subtitle">Overview of your charging stations</p>
                 </div>
-
-                <!-- Stats Content -->
                 <div id="statsContent"></div>
             </div>
 
             <!-- Stations Tab -->
             <div class="tab-content" id="stationsTab">
                 <div class="stations-container">
-                    <!-- Stations Header -->
                     <div class="stations-header">
                         <h2 class="stations-title">My Charging Stations</h2>
                         <button class="add-station-btn" id="addStationBtn">
@@ -46,18 +44,13 @@
                             Add Station
                         </button>
                     </div>
-
-                    <!-- Stations List -->
                     <div class="stations-list" id="stationsList">
-                        <!-- Loading State -->
                         <div class="loading-state" id="loadingState">
                             <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Loading...</span>
                             </div>
                             <p>Loading stations...</p>
                         </div>
-
-                        <!-- Empty State -->
                         <div class="empty-state d-none" id="emptyState">
                             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-ev-station" viewBox="0 0 16 16">
                                 <path d="M1.5 2A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h7a1.5 1.5 0 0 0 1.5-1.5V3.5A1.5 1.5 0 0 0 8.5 2zM1 3.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5zm12.5.5a.5.5 0 0 1 .5.5v4.5c0 .276-.224.5-.5.5H13v2.5a.5.5 0 0 1-1 0V9h-.5a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h1.25V4.5a.5.5 0 0 1 .5-.5zM3 5h4V2.5H3zm0 1v2h4V6zm0 3v3h4V9z"/>
@@ -65,8 +58,23 @@
                             <h3>No Stations Yet</h3>
                             <p>Add your first charging station to get started</p>
                         </div>
+                    </div>
+                </div>
+            </div>
 
-                        <!-- Stations will be loaded here dynamically -->
+            <!-- Reviews Tab -->
+            <div class="tab-content" id="reviewsTab">
+                <div class="reviews-container">
+                    <div class="reviews-header">
+                        <h2 class="reviews-title">Customer Reviews</h2>
+                    </div>
+                    <div id="reviewsContent">
+                        <div class="loading-state">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Loading reviews...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -74,7 +82,6 @@
             <!-- Account Tab -->
             <div class="tab-content" id="accountTab">
                 <div class="account-container">
-                    <!-- Account Header -->
                     <div class="account-header">
                         <div class="profile-section">
                             <div class="profile-avatar">
@@ -90,10 +97,7 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Account Menu -->
                     <div class="account-menu">
-                        <!-- Change Password -->
                         <div class="menu-item" id="changePasswordBtn">
                             <div class="menu-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-key-fill" viewBox="0 0 16 16">
@@ -110,8 +114,6 @@
                                 </svg>
                             </div>
                         </div>
-
-                        <!-- Logout Button -->
                         <button class="logout-btn" id="logoutBtn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-box-arrow-right" viewBox="0 0 16 16">
                                 <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"/>
@@ -124,7 +126,7 @@
             </div>
         </div>
 
-        <!-- Modals (Station, Delete, Map, Password) remain the same as original -->
+        <!-- Modals remain the same -->
         <!-- Add/Edit Station Modal -->
         <div class="modal fade" id="stationModal" tabindex="-1" aria-labelledby="stationModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -206,11 +208,7 @@
                                 <input type="file" class="form-control" id="stationImages" name="images[]" 
                                     accept="image/*" multiple>
                                 <div class="form-text">You can select multiple images (Max 5MB each)</div>
-                                
-                                <!-- Preview container -->
                                 <div id="imagePreviewContainer" class="mt-2 d-flex flex-wrap gap-2"></div>
-                                
-                                <!-- Existing images for edit mode -->
                                 <div id="existingImagesContainer" class="mt-2"></div>
                             </div>
 
@@ -334,6 +332,12 @@
                 </svg>
                 <span>Stations</span>
             </div>
+            <div class="nav-item" data-tab="reviewsTab">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill" viewBox="0 0 16 16">
+                    <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                </svg>
+                <span>Reviews</span>
+            </div>
             <div class="nav-item" data-tab="accountTab">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
                     <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
@@ -346,6 +350,7 @@
 
     <script src="../js/provider-dashboard.js"></script>
     <script src="../js/provider-stats.js"></script>
+    <script src="../js/provider-reviews.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </body>
 </html>
